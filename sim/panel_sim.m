@@ -7,22 +7,15 @@ close all
 
 %% Parameters
 % rng(par_sim.rand_seed, "twister")
-% iph = init0; % photocurrent [A] UNKNOWN
-% idc = init0; % cell diode current [A] UNKNOWN
-% vdc = init0; % cell diode voltage [A] UNKNOWN
-% ic = init0; % cell current [A] UNKNOWN
-% vc = init0; % cell voltage [A] UNKNOWN
-% idb = init0; % bypass diode current [A] UNKNOWN
-% Bypass diode voltage is opposite to the cell voltage
-% vdb = init0; % bypass diode voltage [A] UNKNOWN
-% ids = zeros(1,Np); % series diode current [A] UNKNOWN
-% vds = zeros(1,Np); % series diode voltage [A] UNKNOWN
 
 [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
     panel_param_default();
 [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
     update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds);
-par_cell.lambda(1,1) = 0.2;
+par_cell.lambda(1:7,1) = 0.1;
+% par_cell.lambda([4,5,6],1) = 0.1;
+% par_cell.lambda(3,3) = 0.1;
+% par_cell.lambda(2:3,5) = 0.4;
 
 %% Simulation
 
@@ -31,6 +24,10 @@ out_cell_ref = sim_cell(par_sys, par_sim, par_cell);
 
 % Panel simulation, no diodes
 [out_panel, out_cell_panel] = sim_panel(par_sys, par_sim, par_cell);
+
+% Panel simulation, with bypass and series diodes
+[outp, outc, outdb, outds] = sim_panel_diodes(...
+    par_sys, par_sim, par_cell, par_dbp, par_ds);
 
 %% Results
 figure
@@ -49,7 +46,7 @@ for ii = 1:par_sys.Np
         subplot(2,1,2)
         hold on
         plot(squeeze(out_cell_panel.vc(jj,ii,:)), squeeze(out_cell_panel.pc(jj,ii,:)), '--')
-        
+
     end
 end
 subplot(2,1,1)
@@ -65,14 +62,15 @@ ylim([0, max(out_cell_ref.pmpp, [], "all")])
 box on
 grid on
 
+%%
 figure
 subplot(2,1,1)
-plot(out_panel.vp, out_panel.ip)
-ylim([0, max(out_panel.ip)])
+plot(out_panel.vp, out_panel.ip, outp.vp, outp.ip)
+ylim([0, Inf])
 xlabel('Panel voltage (V)')
 ylabel('Panel current (A)')
 subplot(2,1,2)
-plot(out_panel.vp, out_panel.pp)
-ylim([0, max(out_panel.pp)])
+plot(out_panel.vp, out_panel.pp, outp.vp, outp.pp)
+ylim([0, Inf])
 xlabel('Panel voltage (V)')
 ylabel('Panel power (W)')

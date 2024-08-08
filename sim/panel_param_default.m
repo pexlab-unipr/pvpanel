@@ -2,8 +2,8 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
     panel_param_default()
     % System parameters
     par_sys.Ns = 12; % number of cells in series
-    par_sys.Np = 5; % number of series in parallel
-    par_sys.Ncpbd = 4; % number of cell in series per each bypass diode
+    par_sys.Np = 1; % number of series in parallel
+    par_sys.Ncpbd = 1; % number of cell in series per each bypass diode
     
     % Simulation parameters
     par_sim.Nsim = 101; % number of measurements for contructing the characteristic
