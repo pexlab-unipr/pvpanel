@@ -49,7 +49,7 @@ function [outp, outc, outdb, outds] = sim_panel_diodes(...
         idb(:,:,ii) = reshape(x(iia(4):iib(4)), Nbdps, Np);
         vds(:,:,ii) = reshape(x(iia(5):iib(5)), 1, Np);
         ids(:,:,ii) = reshape(x(iia(6):iib(6)), 1, Np);
-        disp(ii)
+        progress_bar(ii, Nsim, 30, "Progress")
     end
     outp.vp = vp;
     outp.ip = ip;
