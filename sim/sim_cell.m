@@ -10,6 +10,6 @@ function out = sim_cell(par_sys, par_sim, par_cell)
         ic(:,:,ii) = fsolve(@(x) fcell(vc(ii), x, par_cell), ...
             ic(:,:,ii), opts);
     end
-    vc = shiftdim(repmat(vc, [1, Ns, Np]), 1);
+    vc = repmat(reshape(vc, [1, 1, Nsim]), Ns, Np);
     out = compute_cell_res(vc, ic);
 end

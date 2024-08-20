@@ -13,21 +13,21 @@ close all
     update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds);
 
 %% Simulation
-% Baseline cell simulation (cell alone)
-% out_cell_ref = sim_cell(par_sys, par_sim, par_cell);
-
 % Panel simulation, no diodes
-[outp1, out_cell_panel] = sim_panel(par_sys, par_sim, par_cell);
+[outp1, outc1] = sim_panel(par_sys, par_sim, par_cell);
 
 % Panel simulation, with bypass and series diodes
-[outp2, outc, outdb, outds] = sim_panel_diodes(...
+[outp2, outc2, outdb2, outds2] = sim_panel_diodes(...
     par_sys, par_sim, par_cell, par_dbp, par_ds);
 
 % Shade them!
-par_cell.lambda(1:2,1) = 0.1;
+par_cell.lambda(1,1) = 0.3;
 
-[outp3] = sim_panel(par_sys, par_sim, par_cell);
-[outp4] = sim_panel_diodes(...
+% Baseline cell simulation (cell alone)
+outc0 = sim_cell(par_sys, par_sim, par_cell);
+
+[outp3, outc3] = sim_panel(par_sys, par_sim, par_cell);
+[outp4, outc4, outdb4, outds4] = sim_panel_diodes(...
     par_sys, par_sim, par_cell, par_dbp, par_ds);
 
 %% Results
@@ -55,3 +55,18 @@ plot(...
 ylim([0, Inf])
 xlabel('Panel voltage (V)')
 ylabel('Panel power (W)')
+
+%%
+figure
+hold on
+%
+plot(outp3.vp, squeeze(outc3.pc(1,1,:)), 'b--')
+plot(outp4.vp, squeeze(outc4.pc(1,1,:)), 'b-')
+plot(outp4.vp, squeeze(outc0.pc(1,1,:)), 'b.')
+%
+plot(outp3.vp, squeeze(outc3.pc(2,1,:)), 'r--')
+plot(outp4.vp, squeeze(outc4.pc(2,1,:)), 'r-')
+plot(outp4.vp, squeeze(outc0.pc(2,1,:)), 'r.')
+%
+box on
+grid on
