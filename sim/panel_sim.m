@@ -12,6 +12,9 @@ close all
 [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
     update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds);
 
+%% Test
+sim_panel_optimizers(par_sys, par_sim, par_cell);
+
 %% Simulation
 % Panel simulation, no diodes
 [outp1, outc1] = sim_panel(par_sys, par_sim, par_cell);
