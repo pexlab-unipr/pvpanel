@@ -9,13 +9,17 @@ function [outp, outc, outdb, outds] = sim_panel_optimizers(...
     Ncpo = par_sys.Ncpbd; % number of cells per optimizer
 
     % 1) Compute curve of each substring, comprising Ncpbd cells in series
-    % 2) Fix each substring working point to the MPP
     for iis = 1:Np % for each string in parallel
         for iio = 1:Nops % for each optimizer/substring in string
             this_par_cell = structfun(...
                 @(x) x(((iio - 1)*Ncpo + 1):(iio*Ncpo),iis), ...
                 par_cell, 'UniformOutput', false);
-            % [outp1, outc1] = sim_panel(par_sys, par_sim, this_par_cell);
+            this_par_sys.Ns = Ncpo;
+            this_par_sys.Np = 1;
+            this_par_sys.Nc = Ncpo;
+            [outp, outc] = sim_panel(this_par_sys, par_sim, this_par_cell);
+            % 2) Find MPP of each substring
+            outp
         end
     end
 
