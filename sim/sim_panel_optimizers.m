@@ -1,5 +1,5 @@
 function [outp, outc, outo] = sim_panel_optimizers(...
-    par_sys, par_sim, par_cell)
+    par_sys, par_sim, par_cell, par_opt)
     
     Nsim = par_sim.Nsim;
     Vmax = par_sim.Vmax;
@@ -47,10 +47,14 @@ function [outp, outc, outo] = sim_panel_optimizers(...
     end
 
     % 3) Fix each converter output working point
+    Vo_max = par_opt.Vmax;
+    Io_max = par_opt.Imax;
     vp = reshape(linspace(0, Ns*Vmax, Nsim), [1 1 Nsim]);
     pmpps = sum(outo.vi .* outo.ii, 1); % MPP power for each string
-    outo.vo = outo.vi .* outo.ii .* vp ./ pmpps;
-    outo.io = outo.vi .* outo.ii ./ outo.vo;
+    % Compute output working points according to linear constraints
+    % (series) and saturate to respect extreme values of converter
+    outo.vo = min(outo.vi .* outo.ii .* vp ./ pmpps, Vo_max);
+    outo.io = min(outo.vi .* outo.ii ./ outo.vo, Io_max);
     % Remove NaN or Inf arising dividing by zero (limits value)
     flt = ...
         isnan(outo.vo) | isinf(outo.vo) | ...

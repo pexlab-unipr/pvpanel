@@ -1,5 +1,5 @@
-function [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
-    update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds)
+function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
+    update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt)
     % The number of cells in series to which each bypass diode is connected
     % must be an even submultiple of the number of cells in series in the
     % panel/plant

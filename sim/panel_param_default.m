@@ -1,4 +1,4 @@
-function [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
+function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     panel_param_default()
     % System parameters
     par_sys.Ns = 12; % number of cells in series
@@ -32,4 +32,11 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
     % Series diode parameters
     par_ds.Isd = 1e-9; % saturation current of series diode [A]
     par_ds.EtaVt = 1.6*26e-3; % ideality factor * thermal voltage [V]
+
+    % Optimizer parameters
+    par_opt.Eta = 0.98; % converter efficiency [1]
+    par_opt.Imax = 5; % maximum output current [A]
+    par_opt.Vmax = 5; % maximum output voltage [V]
+    par_opt.Amax = 10; % maximum converter gain, relative to input [1]
+    par_opt.Amin = 0.1; % minimum converter gain, relative to input [1]
 end

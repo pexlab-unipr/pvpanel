@@ -7,10 +7,10 @@ close all
 
 %% Parameters
 % rng(par_sim.rand_seed, "twister")
-[par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
+[par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     panel_param_default();
-[par_sys, par_sim, par_cell, par_dbp, par_ds] = ...
-    update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds);
+[par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
+    update_parameters(par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt);
 
 %% Test
 
@@ -25,7 +25,7 @@ close all
 % Shade them!
 par_cell.lambda(1,1) = 0.3;
 [outp, outc, outo] = sim_panel_optimizers(...
-    par_sys, par_sim, par_cell);
+    par_sys, par_sim, par_cell, par_opt);
 
 % Baseline cell simulation (cell alone)
 outc0 = sim_cell(par_sys, par_sim, par_cell);
@@ -64,16 +64,16 @@ xlabel('Panel voltage (V)')
 ylabel('Panel power (W)')
 
 %%
-figure
-hold on
-%
-plot(outp3.vp, squeeze(outc3.pc(1,1,:)), 'b--')
-plot(outp4.vp, squeeze(outc4.pc(1,1,:)), 'b-')
-plot(outp4.vp, squeeze(outc0.pc(1,1,:)), 'b.')
-%
-plot(outp3.vp, squeeze(outc3.pc(2,1,:)), 'r--')
-plot(outp4.vp, squeeze(outc4.pc(2,1,:)), 'r-')
-plot(outp4.vp, squeeze(outc0.pc(2,1,:)), 'r.')
-%
-box on
-grid on
+% figure
+% hold on
+% %
+% plot(outp3.vp, squeeze(outc3.pc(1,1,:)), 'b--')
+% plot(outp4.vp, squeeze(outc4.pc(1,1,:)), 'b-')
+% plot(outp4.vp, squeeze(outc0.pc(1,1,:)), 'b.')
+% %
+% plot(outp3.vp, squeeze(outc3.pc(2,1,:)), 'r--')
+% plot(outp4.vp, squeeze(outc4.pc(2,1,:)), 'r-')
+% plot(outp4.vp, squeeze(outc0.pc(2,1,:)), 'r.')
+% %
+% box on
+% grid on
