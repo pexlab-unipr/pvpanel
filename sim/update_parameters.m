@@ -20,7 +20,9 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
         par_dbp, 'UniformOutput', false);
     par_ds = structfun(@(x) repeat_pv_value(x, 1, par_sys.Np), ...
         par_ds, 'UniformOutput', false);
-
+    % par_opt = structfun(@(x) repeat_pv_value(x, par_sys.Nbdps, par_sys.Np), ...
+    %     par_opt, 'UniformOutput', false);
+    
     % Compute matrix quantities for convenience
     par_cell.Gsh = 1./par_cell.Rsh;
 end

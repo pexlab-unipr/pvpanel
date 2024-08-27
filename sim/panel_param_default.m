@@ -3,11 +3,11 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     % System parameters
     par_sys.Ns = 12; % number of cells in series
     par_sys.Np = 2; % number of series in parallel
-    par_sys.Ncpbd = 3; % number of cell in series per each bypass diode
+    par_sys.Ncpbd = 4; % number of cell in series per each bypass diode
     
     % Simulation parameters
     par_sim.Nsim = 101; % number of measurements for contructing the characteristic
-    par_sim.Vmax = 0.8;
+    par_sim.Vmax = 0.7;
     par_sim.rand_seed = 68431;
     
     % Cell photocurrent parameters

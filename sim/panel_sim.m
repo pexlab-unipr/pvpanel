@@ -62,18 +62,3 @@ plot(...
 ylim([0, Inf])
 xlabel('Panel voltage (V)')
 ylabel('Panel power (W)')
-
-%%
-% figure
-% hold on
-% %
-% plot(outp3.vp, squeeze(outc3.pc(1,1,:)), 'b--')
-% plot(outp4.vp, squeeze(outc4.pc(1,1,:)), 'b-')
-% plot(outp4.vp, squeeze(outc0.pc(1,1,:)), 'b.')
-% %
-% plot(outp3.vp, squeeze(outc3.pc(2,1,:)), 'r--')
-% plot(outp4.vp, squeeze(outc4.pc(2,1,:)), 'r-')
-% plot(outp4.vp, squeeze(outc0.pc(2,1,:)), 'r.')
-% %
-% box on
-% grid on

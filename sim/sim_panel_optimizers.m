@@ -47,14 +47,22 @@ function [outp, outc, outo] = sim_panel_optimizers(...
     end
 
     % 3) Fix each converter output working point
+    vp = reshape(linspace(0, Ns*Vmax, Nsim), [1 1 Nsim]);
     Vo_max = par_opt.Vmax;
     Io_max = par_opt.Imax;
-    vp = reshape(linspace(0, Ns*Vmax, Nsim), [1 1 Nsim]);
-    pmpps = sum(outo.vi .* outo.ii, 1); % MPP power for each string
+    Eta_opt = par_opt.Eta * ones(Nops, Np);
+    % From optimizer power [Nops x Np] to string power [1 x Np]
+    pmpps = sum(Eta_opt .* outo.vi .* outo.ii, 1); % MPP power for each string 
     % Compute output working points according to linear constraints
     % (series) and saturate to respect extreme values of converter
-    outo.vo = min(outo.vi .* outo.ii .* vp ./ pmpps, Vo_max);
-    outo.io = min(outo.vi .* outo.ii ./ outo.vo, Io_max);
+    is = min(pmpps ./ vp, Io_max); % strings current [1 x Np x Nsim]
+    pmpps_sat = vp .* is;
+    k_sat = pmpps_sat ./ pmpps;
+    outo.io = repmat(is, Nops, 1, 1); % [Nops x Np x Nsim]
+    % WARNING: voltage saturation not implemented effectively!
+    outo.vo = min(Eta_opt .* outo.vi .* outo.ii .* k_sat./ outo.io, Vo_max); % [Nops x Np x Nsim]
+    % outo.vo = min(outo.vi .* outo.ii .* vp ./ pmpps, Vo_max);
+    % outo.io = min(outo.vi .* outo.ii ./ outo.vo, Io_max);
     % Remove NaN or Inf arising dividing by zero (limits value)
     flt = ...
         isnan(outo.vo) | isinf(outo.vo) | ...
@@ -64,6 +72,14 @@ function [outp, outc, outo] = sim_panel_optimizers(...
 
     % 4) Compute the overall panel + optimizers characteristic curve
     outp.v = vp(:);
+    outp.v2 = sum(outo.vo, 1);
     outp.i = squeeze(sum(outo.io(1,:,:), 2));
     outp.p = outp.v .* outp.i;
+    outp.p2 = squeeze(sum(outo.vo .* outo.io, [1 2]));
+    
+    % Enforce some controls, possible unstudied issues with saturation
+    assert(all(abs(outp.v2 - vp) < 1e-6, 'all'), ...
+        'Voltage constraint on strings violated by optimizers')
+    assert(all(abs(outp.p2 - outp.p) < 1e-6, 'all'), ...
+        'Power conservation constraint lost by optimizers')
 end
