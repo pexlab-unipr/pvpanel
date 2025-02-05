@@ -20,19 +20,18 @@ equation
   p_celle.i + n_celle.i = 0;
   p_stringa.i + n_stringa.i = 0;
   
+  // Output voltage as a function of input, multiplied by gain
+  p_stringa.v - n_stringa.v = guadagno * (p_celle.v - n_celle.v);
+  
   //calcolo Pin
   Pin = p_celle.i * (p_celle.v - n_celle.v);
   
   //calcolo la Pout come Pin * efficienza
   Pout = Pin * efficienza;
   
-  //calcolo Iout come Iin * G
-  p_stringa.i = p_celle.i * guadagno;
+  // Iout computation from power conservation (efficiency included)
+  p_stringa.i * (p_stringa.v - n_stringa.v) = Pout;
   
-  //ricavo Vout per mantenere la Pout in uscita
-  p_stringa.v - n_stringa.v = Pout/p_stringa.i;
-  
-
   annotation(
     uses(Modelica(version = "4.0.0")),
     Diagram);

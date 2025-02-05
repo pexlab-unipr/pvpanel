@@ -7,7 +7,7 @@ model test_convertitore
     Placement(transformation(origin = {-60, -70}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Basic.Resistor resistor(R = 1000)  annotation(
     Placement(transformation(origin = {40, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Electrical.Analog.Basic.Capacitor capacitor(v(start = 22), C(displayUnit = "nF") = 1e-9)  annotation(
+  Modelica.Electrical.Analog.Basic.Capacitor capacitor(v(start = 22, fixed = true), C(displayUnit = "nF") = 1e-9)  annotation(
     Placement(transformation(origin = {40, -30}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
 equation
   connect(ground.p, cosineVoltage.n) annotation(
