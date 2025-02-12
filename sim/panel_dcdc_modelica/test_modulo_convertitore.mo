@@ -9,14 +9,12 @@ model test_modulo_convertitore
     Placement(transformation(origin = {-50, -30}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage annotation(
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, final height = 7) annotation(
+  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 1) annotation(
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
-  matrix_output matrix_output1(final n_rows = 10, n_cols = 1, values = [1000; fill(1000, 9, 1)]) annotation(
+  matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [1000; fill(1000, 1, 1)]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
-  pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 10, n_paralleli = 1, n_celle_conveter = 5)  annotation(
+  pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 2, n_paralleli = 1, n_celle_converter = 1) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
-  Modelica.Electrical.Analog.Basic.Resistor resistor(R = 10)  annotation(
-    Placement(transformation(origin = {12, 24}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
 equation
   connect(voltageSensor.v, potenza.u2) annotation(
     Line(points = {{44, 10}, {46, 10}, {46, 34}, {58, 34}}, color = {0, 0, 127}));
@@ -36,12 +34,10 @@ equation
     Line(points = {{-50, -20}, {-50, 0}}, color = {0, 0, 255}));
   connect(matrix_output1.y, pvcell_modulo_convertitore1.lights) annotation(
     Line(points = {{-78, 10}, {-62, 10}}, color = {0, 0, 127}, thickness = 0.5));
-  connect(resistor.p, currentSensor.n) annotation(
-    Line(points = {{12, 34}, {-20, 34}, {-20, 40}}, color = {0, 0, 255}));
-  connect(resistor.n, signalVoltage.n) annotation(
-    Line(points = {{12, 14}, {4, 14}, {4, -20}, {-10, -20}, {-10, 0}}, color = {0, 0, 255}));
+  connect(signalVoltage.p, currentSensor.n) annotation(
+    Line(points = {{-10, 20}, {-10, 40}, {-20, 40}}, color = {0, 0, 255}));
   annotation(
     uses(Modelica(version = "4.0.0")),
-  Diagram(coordinateSystem(extent = {{-100, 60}, {80, -60}})),
-  version = "");
+    Diagram(coordinateSystem(extent = {{-100, 60}, {80, -60}})),
+    version = "");
 end test_modulo_convertitore;
