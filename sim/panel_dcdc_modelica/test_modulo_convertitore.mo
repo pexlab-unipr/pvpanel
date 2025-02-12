@@ -9,7 +9,7 @@ model test_modulo_convertitore
     Placement(transformation(origin = {-50, -30}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage annotation(
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 1) annotation(
+  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 0.4) annotation(
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
   matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [1000; fill(1000, 1, 1)]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));

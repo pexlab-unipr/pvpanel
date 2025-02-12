@@ -10,7 +10,7 @@ model convertitore
 
   parameter Real guadagno   = 1   "guadagno di conversione";
   parameter Real efficienza = 1   "efficienza del convertitore";
- 
+  parameter Real input_impedance = 1 "input impedance";
 
   Real Pin  "potenza in ingresso";
   Real Pout "potenza in uscita del convertitore massima";
@@ -31,6 +31,9 @@ equation
   
   // Iout computation from power conservation (efficiency included)
   p_stringa.i * (p_stringa.v - n_stringa.v) = Pout;
+  
+  // Impose additional constraint of input impedance, to avoid undetermined states
+  //p_celle.v - n_celle.v = input_impedance * p_celle.i;
   
   annotation(
     uses(Modelica(version = "4.0.0")),
