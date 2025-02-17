@@ -1,5 +1,5 @@
 model tb_convertitore
-  Pexlab.PVPanels.convertitore convertitore1(guadagno = 1.2, efficienza = 0.95)  annotation(
+  Pexlab.PVPanels.convertitore convertitore1(efficienza = 0.95)  annotation(
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sources.CosineVoltage cosineVoltage(V = 12, f = 10)  annotation(
     Placement(transformation(origin = {-60, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
