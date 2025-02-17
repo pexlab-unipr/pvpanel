@@ -1,5 +1,5 @@
 model tb_cella
-  pvcell_singola_cella pvcell_singola_cella1 annotation(
+  Pexlab.PVPanels.pvcell_singola_cella pvcell_singola_cella1 annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Blocks.Math.Product potenza annotation(
     Placement(transformation(origin = {90, 40}, extent = {{-10, -10}, {10, 10}})));

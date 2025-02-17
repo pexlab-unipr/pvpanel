@@ -1,4 +1,4 @@
-within PexlabMo;
+within Pexlab;
 package PVPanels
 
   model matrix_output

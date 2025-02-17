@@ -1,4 +1,4 @@
-model test_modulo_convertitore
+model tb_modulo_convertitore
   Modelica.Blocks.Math.Product potenza annotation(
     Placement(transformation(origin = {70, 40}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sensors.CurrentSensor currentSensor annotation(
@@ -11,9 +11,9 @@ model test_modulo_convertitore
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
   Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 1, offset = 0.01) annotation(
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
-  matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [1000; fill(1000, 1, 1)]) annotation(
+  Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [1000; fill(1000, 1, 1)]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
-  pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 2, n_paralleli = 1, n_celle_converter = 1) annotation(
+  Pexlab.PVPanels.pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 2, n_paralleli = 1, n_celle_converter = 1) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
 equation
   connect(voltageSensor.v, potenza.u2) annotation(
@@ -40,4 +40,4 @@ equation
     uses(Modelica(version = "4.0.0")),
     Diagram(coordinateSystem(extent = {{-100, 60}, {80, -60}})),
     version = "");
-end test_modulo_convertitore;
+end tb_modulo_convertitore;
