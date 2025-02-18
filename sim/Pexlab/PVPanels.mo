@@ -24,12 +24,12 @@ package PVPanels
     Modelica.Electrical.Analog.Interfaces.NegativePin n_stringa annotation(
       Placement(transformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}})));
 
-    parameter Real efficienza = 1   "efficienza del convertitore";
+    parameter Real efficiency = 1   "efficienza del convertitore";
     parameter Real input_impedance = 0.1 "input impedance";
-    parameter Real I_in_max = 1 "input current maximum value";
+    parameter Real I_in_max "input current maximum value";
     
     // gain to be determined by power conservation
-    Real guadagno "guadagno di conversione";
+    Real gain "voltage gain";
     
     Real v_in "input voltage";
     Real v_out "output voltage";
@@ -37,6 +37,7 @@ package PVPanels
     Real i_out "output current";
     Real p_in  "input power";
     Real p_out "output power";
+    Real i_in_unsat "unsaturated input current";
     
   equation
     
@@ -51,19 +52,28 @@ package PVPanels
     p_stringa.i + n_stringa.i = 0;
     
     // Output voltage as a function of input, multiplied by gain
-    v_out = guadagno * v_in;
+    v_out = gain * v_in;
     
-    //calcolo Pin
+    // Input power computation
     p_in = i_in * v_in;
     
-    //calcolo la Pout come Pin * efficienza
-    p_out = -p_in * efficienza;
+    // Output power computation considering finite efficiency (yet constant)
+    p_out = -p_in * efficiency;
     
     // Iout computation from power conservation (efficiency included)
     i_out * v_out = p_out;
     
     // Impose additional constraint of input impedance, to avoid undetermined states
-    v_in = input_impedance * i_in;
+    v_in = input_impedance * i_in_unsat;
+    
+    /*
+    Real input current (i_in) may differ from the nominal one (i_in_unsat), coming from the
+    chosen (optimal) input impedance, due to saturation. This is a physical limit imposed
+    by the converter implementation.
+    i_in is saturated to zero on the negative side to represent unidirectionality of the 
+    converter (power cannot flow from output to input).
+    */
+    i_in = min(max(i_in_unsat, 0), I_in_max);
     
     annotation(
       uses(Modelica(version = "4.0.0")),
@@ -236,6 +246,7 @@ package PVPanels
     parameter Integer n_celle_converter = 5     "numero di celle sotto convertitore";
     parameter Integer temp_test         = 25    "temperatura operativa della singola cella";
     parameter Integer irr_test          = 1000  "irraggiamento incidente sul modulo";
+    parameter Real I_in_max_converter "maximum converter input current";
     
     // Matrix of PV cells, arranged as in the module (series -> rows, parallels -> columns)
     pvcell_singola_cella pv_celle[n_serie, n_paralleli] (each Temperatura = temp_test) "creo array e assegno temperatura a ciascuno";
@@ -245,7 +256,7 @@ package PVPanels
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
     //importo il modello del convertitore, per ora non cambio il guadagno
-    convertitore conv_dc_dc[num_conv, n_paralleli];
+    convertitore conv_dc_dc[num_conv, n_paralleli](each I_in_max = I_in_max_converter);
     
     
   protected
