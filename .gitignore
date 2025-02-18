@@ -1,3 +1,4 @@
 *.asv
 sim/slprj/
 *.slxc
+sim/Pexlab/package.order
