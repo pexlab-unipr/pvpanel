@@ -23,21 +23,25 @@ package PVPanels
       Placement(transformation(origin = {100, 30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {100, 30}, extent = {{-10, -10}, {10, 10}})));
     Modelica.Electrical.Analog.Interfaces.NegativePin n_stringa annotation(
       Placement(transformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}})));
-
-    parameter Real efficiency = 1   "efficienza del convertitore";
+  
+    parameter Real gain = 1              "converter voltage gain"; // suggested gain (depends on saturation conditions)
+    parameter Real efficiency = 1        "efficienza del convertitore";
     parameter Real input_impedance = 0.1 "input impedance";
-    parameter Real I_in_max "input current maximum value";
+    parameter Real I_out_max             "output current maximum value";
     
-    // gain to be determined by power conservation
-    Real gain "voltage gain";
+    parameter Boolean fixed_gain = true;
+    //parameter Boolean fixed_impedance = true;
     
-    Real v_in "input voltage";
+    Real v_in  "input voltage";
     Real v_out "output voltage";
     Real i_in  "input current";
     Real i_out "output current";
     Real p_in  "input power";
     Real p_out "output power";
-    Real i_in_unsat "unsaturated input current";
+    
+    // Working values (to help dealing with saturations)
+    Real R_in  "input impedance";
+    Real A     "converter gain";
     
   equation
     
@@ -52,7 +56,7 @@ package PVPanels
     p_stringa.i + n_stringa.i = 0;
     
     // Output voltage as a function of input, multiplied by gain
-    v_out = gain * v_in;
+    v_out = A * v_in;
     
     // Input power computation
     p_in = i_in * v_in;
@@ -61,10 +65,10 @@ package PVPanels
     p_out = -p_in * efficiency;
     
     // Iout computation from power conservation (efficiency included)
-    i_out * v_out = p_out;
+    p_out = i_out * v_out;
     
     // Impose additional constraint of input impedance, to avoid undetermined states
-    v_in = input_impedance * i_in_unsat;
+    v_in = R_in * i_in;
     
     /*
     Real input current (i_in) may differ from the nominal one (i_in_unsat), coming from the
@@ -73,7 +77,15 @@ package PVPanels
     i_in is saturated to zero on the negative side to represent unidirectionality of the 
     converter (power cannot flow from output to input).
     */
-    i_in = min(max(i_in_unsat, 0), I_in_max);
+    if fixed_gain then
+      if i_out < -I_out_max then
+        i_out = -I_out_max;
+      else
+        A = gain;
+      end if;
+    else
+      R_in = input_impedance;
+    end if;
     
     annotation(
       uses(Modelica(version = "4.0.0")),
