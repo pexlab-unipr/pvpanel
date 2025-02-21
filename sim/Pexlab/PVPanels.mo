@@ -78,10 +78,10 @@ package PVPanels
     converter (power cannot flow from output to input).
     */
     if fixed_gain then
-      if i_out < -I_out_max then
-        i_out = -I_out_max;
-      else
+      if -i_out <= I_out_max then
         A = gain;
+      else
+        -i_out = I_out_max;
       end if;
     else
       R_in = input_impedance;

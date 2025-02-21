@@ -9,7 +9,7 @@ model tb_convertitore
     Placement(transformation(origin = {80, 10}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
   Modelica.Electrical.Analog.Sources.ConstantVoltage constantVoltage(V = 10) annotation(
     Placement(transformation(origin = {-80, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Blocks.Sources.Ramp ramp(height = 19, duration = 1, offset = 1)  annotation(
+  Modelica.Blocks.Sources.Ramp ramp(height = -19, duration = 1, offset = 20)  annotation(
     Placement(transformation(origin = {0, -30}, extent = {{-10, -10}, {10, 10}})));
 equation
   connect(ground.p, constantVoltage.n) annotation(
