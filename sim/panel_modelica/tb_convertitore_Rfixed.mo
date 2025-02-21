@@ -7,7 +7,7 @@ model tb_convertitore_Rfixed
     Placement(transformation(origin = {80, -30}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
   Modelica.Electrical.Analog.Basic.Resistor resistor(R = 10)  annotation(
     Placement(transformation(origin = {80, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Electrical.Analog.Sources.RampVoltage rampVoltage(V = 50, duration = 1)  annotation(
+  Modelica.Electrical.Analog.Sources.RampVoltage rampVoltage(V = 49, duration = 1, offset = 1)  annotation(
     Placement(transformation(origin = {-80, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
 equation
   connect(capacitor.n, ground.p) annotation(
