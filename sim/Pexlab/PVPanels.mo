@@ -42,7 +42,8 @@ package PVPanels
     // Working values (to help dealing with saturations)
     Real R_in  "input impedance";
     Real A     "converter gain";
-    Real s     "abstract variable for saturation";
+    Real s(start = 1.0)    "abstract variable for saturation";
+    Boolean sat;
   equation
     
     // Easy-to-see quantities
@@ -77,13 +78,10 @@ package PVPanels
     i_in is saturated to zero on the negative side to represent unidirectionality of the 
     converter (power cannot flow from output to input).
     */
-    s = efficiency*i_in/A/I_out_max;
+    sat = s > 0;
     if fixed_gain then
-      if s > 1 then
-        -i_out = I_out_max;
-      else
-        A = gain;
-      end if;
+      i_out = if sat then -I_out_max else I_out_max/(s - 1);
+      A = if sat then gain/(s + 1) else gain;
     else
       R_in = input_impedance;
     end if;
