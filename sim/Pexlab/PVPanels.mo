@@ -23,23 +23,23 @@ package PVPanels
     parameter Real I_out_max             "output current maximum value";
     
     parameter Boolean fixed_gain = true;
-    Real p_in  "input power";
-    Real p_out "output power";
+    Modelica.Units.SI.Power pw1  "input power";
+    Modelica.Units.SI.Power pw2 "output power";
     // Working values (to help dealing with saturations)
-    Real R_in  "input impedance";
+    Modelica.Units.SI.Resistance R_in  "input impedance";
     Real A     "converter gain";
-    Real s(start = 1.0)    "abstract variable for saturation";
+    Real s(start = 0.0)    "abstract variable for saturation";
     Boolean sat;
   equation
   // Output voltage as a function of input, multiplied by gain
     v2 = A*v1;
   // Input power computation
-    p1 = v1*i1;
+    pw1 = v1*i1;
   // Output power computation considering finite efficiency (yet constant)
-    p2 + p1*efficiency = 0;
-// Iout computation from power conservation (efficiency included)
-    p2 = v2*i2;
-// Input impedance
+    pw2 + pw1*efficiency = 0;
+  // Iout computation from power conservation (efficiency included)
+    pw2 = v2*i2;
+  // Input impedance
     v1 = R_in*i1;
     
     /*
@@ -54,7 +54,8 @@ package PVPanels
       i2 = if sat then -I_out_max else I_out_max/(s - 1);
       A = if sat then gain/(s + 1) else gain;
     else
-      R_in = input_impedance;
+      i2 = if sat then -I_out_max else I_out_max/(s - 1);
+      R_in = if sat then -input_impedance/(s - 1) else input_impedance;
     end if;
     
     annotation(
