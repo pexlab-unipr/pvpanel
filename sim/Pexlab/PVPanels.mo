@@ -15,26 +15,14 @@ package PVPanels
   end matrix_output;
 
   model convertitore
-    Modelica.Electrical.Analog.Interfaces.PositivePin p_celle annotation(
-      Placement(transformation(origin = {-100, 30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {-100, 30}, extent = {{-10, -10}, {10, 10}})));
-    Modelica.Electrical.Analog.Interfaces.NegativePin n_celle annotation(
-      Placement(transformation(origin = {-100, -30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {-100, -30}, extent = {{-10, -10}, {10, 10}})));
-    Modelica.Electrical.Analog.Interfaces.PositivePin p_stringa annotation(
-      Placement(transformation(origin = {100, 30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {100, 30}, extent = {{-10, -10}, {10, 10}})));
-    Modelica.Electrical.Analog.Interfaces.NegativePin n_stringa annotation(
-      Placement(transformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {100, -30}, extent = {{-10, -10}, {10, 10}})));
-  
+    extends Modelica.Electrical.Analog.Interfaces.TwoPort;
+    
     parameter Real gain = 1              "converter voltage gain"; // suggested gain (depends on saturation conditions)
     parameter Real efficiency = 1        "efficienza del convertitore";
     parameter Real input_impedance = 0.1 "input impedance";
     parameter Real I_out_max             "output current maximum value";
     
     parameter Boolean fixed_gain = true;
-    //parameter Boolean fixed_impedance = true;
-    Real v_in  "input voltage";
-    Real v_out "output voltage";
-    Real i_in  "input current";
-    Real i_out "output current";
     Real p_in  "input power";
     Real p_out "output power";
     // Working values (to help dealing with saturations)
@@ -43,24 +31,16 @@ package PVPanels
     Real s(start = 1.0)    "abstract variable for saturation";
     Boolean sat;
   equation
-// Easy-to-see quantities
-    v_in = p_celle.v - n_celle.v;
-    v_out = p_stringa.v - n_stringa.v;
-    i_in = p_celle.i;
-    i_out = p_stringa.i;
-// KCL at input and output
-    p_celle.i + n_celle.i = 0;
-    p_stringa.i + n_stringa.i = 0;
-// Output voltage as a function of input, multiplied by gain
-    v_out = A * v_in;
-// Input power computation
-    p_in = i_in * v_in;
-// Output power computation considering finite efficiency (yet constant)
-    p_out = -p_in * efficiency;
+  // Output voltage as a function of input, multiplied by gain
+    v2 = A*v1;
+  // Input power computation
+    p1 = v1*i1;
+  // Output power computation considering finite efficiency (yet constant)
+    p2 + p1*efficiency = 0;
 // Iout computation from power conservation (efficiency included)
-    p_out = i_out * v_out;
-// Impose additional constraint of input impedance, to avoid undetermined states
-    v_in = R_in * i_in;
+    p2 = v2*i2;
+// Input impedance
+    v1 = R_in*i1;
     
     /*
     Real input current (i_in) may differ from the nominal one (i_in_unsat), coming from the
@@ -71,7 +51,7 @@ package PVPanels
     */
     sat = s > 0;
     if fixed_gain then
-      i_out = if sat then -I_out_max else I_out_max/(s - 1);
+      i2 = if sat then -I_out_max else I_out_max/(s - 1);
       A = if sat then gain/(s + 1) else gain;
     else
       R_in = input_impedance;
