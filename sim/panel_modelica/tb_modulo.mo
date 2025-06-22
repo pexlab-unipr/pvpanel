@@ -7,13 +7,13 @@ model tb_modulo
     Placement(transformation(origin = {32, 10}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
   Modelica.Electrical.Analog.Basic.Ground ground annotation(
     Placement(transformation(origin = {-50, -30}, extent = {{-10, -10}, {10, 10}})));
-  Pexlab.PVPanels.pvcell_modulo pvcell_modulo1(n_serie = 10, n_paralleli = 1, n_celle_bypass = 2, final temp_test, irr_test = 1000)  annotation(
+  Pexlab.PVPanels.pvcell_modulo pvcell_modulo1(irr_test = 1000, n_celle_bypass = 2, n_paralleli = 1, n_serie = 4) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage annotation(
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, final height = 7) annotation(
+  Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 3.2) annotation(
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
-  Pexlab.PVPanels.matrix_output matrix_output1(n_rows = 10, n_cols = 1, values = [100; fill(1000, 9, 1)]) annotation(
+  Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 4, values = [250; 1000; 1000; 1000]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
 equation
   connect(voltageSensor.v, potenza.u2) annotation(
@@ -38,6 +38,6 @@ equation
     Line(points = {{-78, 10}, {-62, 10}}, color = {0, 0, 127}, thickness = 0.5));
   annotation(
     uses(Modelica(version = "4.0.0")),
-  Diagram(coordinateSystem(extent = {{-100, 60}, {80, -60}})),
-  version = "");
+    Diagram(coordinateSystem(extent = {{-100, 60}, {80, -60}})),
+    version = "");
 end tb_modulo;

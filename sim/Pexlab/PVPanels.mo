@@ -14,6 +14,33 @@ package PVPanels
       Icon(graphics = {Rectangle(extent = {{-100, 100}, {100, -100}})}));
   end matrix_output;
 
+  model diode "Simple diode with heating port"
+    extends Modelica.Electrical.Analog.Interfaces.OnePort;
+    parameter Real Ids=1e-6 "Saturation current";
+    parameter Real Vt=0.026 "Voltage equivalent of temperature (kT/qn)";
+    parameter Real N=1.5 "Emission coefficient";
+    
+  equation
+    i = Ids*(exp(v/(N*Vt)) - 1);
+    
+    annotation (defaultComponentName="diode",
+      Icon(coordinateSystem(
+          preserveAspectRatio=true,
+          extent={{-100,-100},{100,100}}), graphics={
+          Polygon(
+            points={{30,0},{-30,40},{-30,-40},{30,0}},
+            lineColor={0,0,255},
+            fillColor={255,255,255},
+            fillPattern=FillPattern.Solid),
+          Line(points={{-90,0},{40,0}}, color={0,0,255}),
+          Line(points={{40,0},{90,0}}, color={0,0,255}),
+          Line(points={{30,40},{30,-40}}, color={0,0,255}),
+          Text(
+            extent={{-150,90},{150,50}},
+            textString="%name",
+            textColor={0,0,255})}));
+  end diode;
+
   model convertitore
     extends Modelica.Electrical.Analog.Interfaces.TwoPort;
     
@@ -162,8 +189,8 @@ package PVPanels
     // Matrix of PV cells, arranged as in the module (series -> rows, parallels -> columns)
     pvcell_singola_cella pv_celle[n_serie, n_paralleli] (each Temperatura = temp_test) "creo array e assegno temperatura a ciascuno";
   //introduco i diodi di bypass e di stringa
-    Modelica.Electrical.Analog.Semiconductors.Diode diodi_bypass[num_bypass, n_paralleli]  "diodi di bypass";        
-    Modelica.Electrical.Analog.Semiconductors.Diode diodi_stringa[n_paralleli]             "diodi di stringa";
+    diode diodi_bypass[num_bypass, n_paralleli]  "diodi di bypass";        
+    diode diodi_stringa[n_paralleli]             "diodi di stringa";
     Modelica.Blocks.Interfaces.RealVectorInput lights[n_serie, n_paralleli] annotation(
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
@@ -186,6 +213,7 @@ for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il ter
         connect(p, diodi_stringa[ramo].n);
 //collego il diodo di stringa con la prima cella
         connect(diodi_stringa[ramo].p, pv_celle[1, ramo].p);
+        //connect(p, pv_celle[1, ramo].p);
 //ciclo serie
       for serie in 1:n_serie-1 loop
 //collego la cella con la successiva

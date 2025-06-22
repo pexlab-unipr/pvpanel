@@ -9,7 +9,12 @@ function err = fpanel_diodes(vout, iout, vc, ic, vdb, idb, vds, ids, ...
     err_cell = fcell(vc, ic, par_cell);
     % Satisfy diodes models
     err_dbp = idb - fdiode(vdb, par_dbp);
-    err_ds = ids - fdiode(vds, par_ds);
+    % Remove series diode when there are no parallels
+    if numel(vds) == 1
+        err_ds = vds;
+    else
+        err_ds = ids - fdiode(vds, par_ds);
+    end
     % Each bypass diode in parallel with cells
     A = repelem(eye(Nbdps), 1, Ncpbd); %repcol(eye(Nbd), Ncpbd);
     err_par_cell_dbp = A*vc + vdb;

@@ -3,7 +3,7 @@ function par_fit = fit_cell(vc, ic, varargin)
     vc = vc(:);
     ic = ic(:);
     % Keep only positive current and voltage points
-    flt = (vc > 0) & (ic > 0);
+    flt = (vc >= 0) & (ic >= 0);
     vc = vc(flt);
     ic = ic(flt);
     % Configure explicit model fitting
@@ -25,19 +25,38 @@ function par_fit = fit_cell(vc, ic, varargin)
     C = par_fit(3);
     D = par_fit(4);
     
-    Icc = par_fit(1)
-    Voc = log(Icc/par_fit(3))/par_fit(4)
-    Gp = par_fit(2)
-    Voc_real = fzero(@(x) fcell_expl(x, par_fit), Voc)
-    Vmpp = fzero(@(x) C*exp(D*x) - A/(1+D*x), 0.75*Voc)
+    % Name practical parameters
+    Icc = par_fit(1);
+    Voc = log(Icc/par_fit(3))/par_fit(4);
+    Gp = par_fit(2);
+    Voc_real = fzero(@(x) fcell_expl(x, par_fit), Voc);
+    Vmpp = fzero(@(x) C*exp(D*x) - A/(1+D*x), 0.75*Voc);
+    Impp = fcell_expl(Vmpp, par_fit);
+    Pmpp = Vmpp*Impp;
+    FF = Pmpp/(Voc*Icc);
+    
+    % Display results of cell fitting
+    fprintf([...
+        'Icc  : %6.4g [A]   \n', ...
+        'Voc  : %6.4g [V] (check: %.4g V) \n', ...
+        'Rp   : %6.4g [ohm] \n', ...
+        'Vmpp : %6.4g [V]   \n', ...
+        'Impp : %6.4g [A]   \n', ...
+        'Pmpp : %6.4g [W]   \n', ...
+        'FF   : %6.4g [%%]   \n'], ...
+        Icc, Voc, Voc_real, 1/Gp, Vmpp, Impp, Pmpp, FF*100)
+    Rs = 4.2e-3; % TODO: remove hardcoding
+    %didv = -1/Rs;
+    didv = (-Gp - Icc/(1.6*26e-3))/(1 + Gp*Rs + Rs*Icc/(1.6*26e-3));
     % Verify
     if nargin > 2 && varargin{1} == true
         figure
         plot(...
             vc, ic, '.b', ...
             vc, res(vc), '-r', ...
-            vc, fcell_expl(vc, fo.StartPoint), '-g')
-        xlim([0 Inf])
+            vc, fcell_expl(vc, fo.StartPoint), '-g', ...
+            vc, Icc - Gp*vc, 'k--', ...
+            vc(end-20:end), 0 - didv * (Voc - vc(end-20:end)), 'k:')
         ylim([0 Inf])
         xlabel('Voltage (V)')
         ylabel('Current (A)')
@@ -52,7 +71,6 @@ function par_fit = fit_cell(vc, ic, varargin)
             vc, vc.*ic, '.b', ...
             vc, vc.*res(vc), '-r', ...
             Vmpp, Vmpp.*fcell_expl(Vmpp, par_fit), 'xg')
-        xlim([0 Inf])
         ylim([0 Inf])
         xlabel('Voltage (V)')
         ylabel('Power (W)')

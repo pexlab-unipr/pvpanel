@@ -1,7 +1,9 @@
 function progress_bar(index, total, width, text)
     str = create_progress_string(index, total, width, text);
     canc = repmat('\b', 1, size(str, 2) + 1);
-    fprintf(canc)
+    if index > 1
+        fprintf(canc)
+    end
     fprintf('%s\n', str);
 end
 

@@ -1,9 +1,9 @@
 function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     panel_param_default()
     % System parameters
-    par_sys.Ns = 12; % number of cells in series
-    par_sys.Np = 2; % number of series in parallel
-    par_sys.Ncpbd = 4; % number of cell in series per each bypass diode
+    par_sys.Ns = 2; % number of cells in series
+    par_sys.Np = 1; % number of series in parallel
+    par_sys.Ncpbd = 1; % number of cell in series per each bypass diode
     
     % Simulation parameters
     par_sim.Nsim = 101; % number of measurements for contructing the characteristic
@@ -18,7 +18,7 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     par_cell.Tref = 25; % cell reference temperature [°C]
     
     % Cell diode parameters
-    par_cell.Isd = 3.15e-7; % saturation current of cell internal diode [A]
+    par_cell.Isd = 315e-9; % saturation current of cell internal diode [A]
     par_cell.EtaVt = 1.4*26e-3; % ideality factor * thermal voltage [V]
     
     % Cell resistance parameters
@@ -26,11 +26,11 @@ function [par_sys, par_sim, par_cell, par_dbp, par_ds, par_opt] = ...
     par_cell.Rsh = 10.1; % cell shunt resistance [ohm]
     
     % Bypass diode parameters
-    par_dbp.Isd = 1e-9; % saturation current of bypass diode [A]
+    par_dbp.Isd = 1e-3; % saturation current of bypass diode [A]
     par_dbp.EtaVt = 1.6*26e-3; % ideality factor * thermal voltage [V]
     
     % Series diode parameters
-    par_ds.Isd = 1e-9; % saturation current of series diode [A]
+    par_ds.Isd = 1e-2; % saturation current of series diode [A]
     par_ds.EtaVt = 1.6*26e-3; % ideality factor * thermal voltage [V]
 
     % Optimizer parameters

@@ -23,13 +23,13 @@ close all
     par_sys, par_sim, par_cell, par_dbp, par_ds);
 
 % Shade them!
-par_cell.lambda(1,1) = 0.3;
+par_cell.lambda(1,1) = 0.25;
 [outp, outc, outo] = sim_panel_optimizers(...
     par_sys, par_sim, par_cell, par_opt);
 
 % Baseline cell simulation (cell alone)
 outc0 = sim_cell(par_sys, par_sim, par_cell);
-par_fit = fit_cell(outc0.vc(1,1,:), outc0.ic(1,1,:), 1);
+par_fit = fit_cell(outc0.vc(1,1,:), outc0.ic(1,1,:), true, true);
 
 [outp3, outc3] = sim_panel(par_sys, par_sim, par_cell);
 [outp4, outc4, outdb4, outds4] = sim_panel_diodes(...
