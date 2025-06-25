@@ -7,13 +7,13 @@ model tb_modulo
     Placement(transformation(origin = {32, 10}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
   Modelica.Electrical.Analog.Basic.Ground ground annotation(
     Placement(transformation(origin = {-50, -30}, extent = {{-10, -10}, {10, 10}})));
-  Pexlab.PVPanels.pvcell_modulo pvcell_modulo1(irr_test = 1000, n_celle_bypass = 2, n_paralleli = 1, n_serie = 4) annotation(
+  Pexlab.PVPanels.pvcell_modulo pvcell_modulo1(irr_test = 1000, n_celle_bypass = 1, n_paralleli = 1, n_serie = 2) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage annotation(
     Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
   Modelica.Blocks.Sources.Ramp ramp(duration(displayUnit = "s") = 1, height = 3.2) annotation(
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
-  Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 4, values = [250; 1000; 1000; 1000]) annotation(
+  Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [250; 1000]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
 equation
   connect(voltageSensor.v, potenza.u2) annotation(

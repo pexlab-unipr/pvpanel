@@ -14,33 +14,6 @@ package PVPanels
       Icon(graphics = {Rectangle(extent = {{-100, 100}, {100, -100}})}));
   end matrix_output;
 
-  model diode "Simple diode with heating port"
-    extends Modelica.Electrical.Analog.Interfaces.OnePort;
-    parameter Real Ids=1e-6 "Saturation current";
-    parameter Real Vt=0.026 "Voltage equivalent of temperature (kT/qn)";
-    parameter Real N=1.5 "Emission coefficient";
-    
-  equation
-    i = Ids*(exp(v/(N*Vt)) - 1);
-    
-    annotation (defaultComponentName="diode",
-      Icon(coordinateSystem(
-          preserveAspectRatio=true,
-          extent={{-100,-100},{100,100}}), graphics={
-          Polygon(
-            points={{30,0},{-30,40},{-30,-40},{30,0}},
-            lineColor={0,0,255},
-            fillColor={255,255,255},
-            fillPattern=FillPattern.Solid),
-          Line(points={{-90,0},{40,0}}, color={0,0,255}),
-          Line(points={{40,0},{90,0}}, color={0,0,255}),
-          Line(points={{30,40},{30,-40}}, color={0,0,255}),
-          Text(
-            extent={{-150,90},{150,50}},
-            textString="%name",
-            textColor={0,0,255})}));
-  end diode;
-
   model convertitore
     extends Modelica.Electrical.Analog.Interfaces.TwoPort;
     
@@ -99,6 +72,7 @@ package PVPanels
       Placement(transformation(origin = {4, 20}, extent = {{-10, -10}, {10, 10}})));
     Modelica.Electrical.Analog.Basic.Resistor R_shunt(R = 200, useHeatPort = false, T_ref = 298.15) annotation(
       Placement(transformation(origin = {-20, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+    Modelica.Electrical.Analog.Semiconductors.Diode diode(useTemperatureDependency = false, final useHeatPort = false, Ids = 6.4e-12, final T(final displayUnit = "K") = 297.15, Vt = 26e-3, Maxexp = 150) annotation(
       Placement(transformation(origin = {-52, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
     Modelica.Electrical.Analog.Sources.SignalCurrent I_ph annotation(
       Placement(transformation(origin = {-80, -10}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
@@ -127,6 +101,7 @@ package PVPanels
   Modelica.Blocks.Math.Product product12 annotation(
       Placement(transformation(origin = {-170, 30}, extent = {{-10, -10}, {10, 10}})));
   equation
+    connect(diode.p, R_serie.p) annotation(
       Line(points = {{-52, 0}, {-52, 20}, {-6, 20}}, color = {0, 0, 255}));
     connect(product11.y, I_ph.i) annotation(
       Line(points = {{-118, -10}, {-92, -10}}, color = {0, 0, 127}));
@@ -187,8 +162,8 @@ package PVPanels
     // Matrix of PV cells, arranged as in the module (series -> rows, parallels -> columns)
     pvcell_singola_cella pv_celle[n_serie, n_paralleli] (each Temperatura = temp_test) "creo array e assegno temperatura a ciascuno";
   //introduco i diodi di bypass e di stringa
-    diode diodi_bypass[num_bypass, n_paralleli]  "diodi di bypass";        
-    //diode diodi_stringa[n_paralleli]             "diodi di stringa";
+    Modelica.Electrical.Analog.Semiconductors.Diode diodi_bypass[num_bypass, n_paralleli]  "diodi di bypass";        
+    //Modelica.Electrical.Analog.Semiconductors.Diode diodi_stringa[n_paralleli]             "diodi di stringa";
     Modelica.Blocks.Interfaces.RealVectorInput lights[n_serie, n_paralleli] annotation(
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
