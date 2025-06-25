@@ -99,7 +99,6 @@ package PVPanels
       Placement(transformation(origin = {4, 20}, extent = {{-10, -10}, {10, 10}})));
     Modelica.Electrical.Analog.Basic.Resistor R_shunt(R = 200, useHeatPort = false, T_ref = 298.15) annotation(
       Placement(transformation(origin = {-20, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-    Modelica.Electrical.Analog.Semiconductors.Diode diode(useTemperatureDependency = false, final useHeatPort = false, Ids = 6.4e-12, final T(final displayUnit = "K") = 297.15, Vt = 26e-3, Maxexp = 150) annotation(
       Placement(transformation(origin = {-52, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
     Modelica.Electrical.Analog.Sources.SignalCurrent I_ph annotation(
       Placement(transformation(origin = {-80, -10}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
@@ -128,7 +127,6 @@ package PVPanels
   Modelica.Blocks.Math.Product product12 annotation(
       Placement(transformation(origin = {-170, 30}, extent = {{-10, -10}, {10, 10}})));
   equation
-    connect(diode.p, R_serie.p) annotation(
       Line(points = {{-52, 0}, {-52, 20}, {-6, 20}}, color = {0, 0, 255}));
     connect(product11.y, I_ph.i) annotation(
       Line(points = {{-118, -10}, {-92, -10}}, color = {0, 0, 127}));
@@ -190,7 +188,7 @@ package PVPanels
     pvcell_singola_cella pv_celle[n_serie, n_paralleli] (each Temperatura = temp_test) "creo array e assegno temperatura a ciascuno";
   //introduco i diodi di bypass e di stringa
     diode diodi_bypass[num_bypass, n_paralleli]  "diodi di bypass";        
-    diode diodi_stringa[n_paralleli]             "diodi di stringa";
+    //diode diodi_stringa[n_paralleli]             "diodi di stringa";
     Modelica.Blocks.Interfaces.RealVectorInput lights[n_serie, n_paralleli] annotation(
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
@@ -210,10 +208,10 @@ package PVPanels
 
 //ciclo per ogni ramo
 for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il terminale + del modulo
-        connect(p, diodi_stringa[ramo].n);
+        //connect(p, diodi_stringa[ramo].n);
 //collego il diodo di stringa con la prima cella
-        connect(diodi_stringa[ramo].p, pv_celle[1, ramo].p);
-        //connect(p, pv_celle[1, ramo].p);
+        //connect(diodi_stringa[ramo].p, pv_celle[1, ramo].p);
+        connect(p, pv_celle[1, ramo].p);
 //ciclo serie
       for serie in 1:n_serie-1 loop
 //collego la cella con la successiva
@@ -223,7 +221,7 @@ for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il ter
 //ciclo per collegare diodi di bypass
         for bp_diode in 1:num_bypass loop
           connect(pv_celle[(bp_diode-1) * n_celle_bypass + 1, ramo].p, diodi_bypass[bp_diode, ramo].n);
-          connect(pv_celle[bp_diode * n_celle_bypass - 1, ramo].n, diodi_bypass[bp_diode, ramo].p);
+          connect(pv_celle[bp_diode * n_celle_bypass, ramo].n, diodi_bypass[bp_diode, ramo].p);
         end for;
 //collego il terminale - della stringa con quello del modulo
         connect(pv_celle[n_serie, ramo].n, n);
