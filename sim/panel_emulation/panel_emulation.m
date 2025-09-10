@@ -9,9 +9,9 @@ close all
 %% PARAMETERS
 SUPPLY_NAME = "ASRL3::INSTR";
 LOAD_NAME = "USB0::0x2A8D::0x3802::MY61002160::0::INSTR";
-SUPPLY_PERIOD = 0.025;
+SUPPLY_PERIOD = 0.05;
 LOAD_PERIOD = 0.2;
-TIME_TOTAL = 20;
+TIME_TOTAL = 30;
 SUPPLY_IDX = 1;
 LOAD_IDX = 2;
 LOAD_RESISTANCE = 60;
@@ -44,8 +44,6 @@ c = b/Isc;
 f = @(x) (a*x + b)./(x + c);
 vs = linspace(0, Voc, 101);
 is = f(vs);
-% figure
-% plot(vs, is)
 pv_lut = [vs(:), is(:)];
 N_supply = round(TIME_TOTAL/SUPPLY_PERIOD);
 N_load = round(TIME_TOTAL/LOAD_PERIOD);
@@ -100,29 +98,12 @@ grid on
 %% Functions
 function supply_run(obj, event, inst, lut)
     vo_str = writeread(inst, "V1O?");
-    vo = get_number(vo_str);
     io_str = writeread(inst, "I1O?");
+    vo = get_number(vo_str);
     io = get_number(io_str);
-    io_pv = interp1(lut(:,1), lut(:,2), vo, "linear", "extrap");
-    vo_pv = interp1(lut(:,2), lut(:,1), io, "linear", "extrap");
-    ii = obj.UserData{1};
-    if ii > 1
-        io_max_old = obj.UserData{3}(ii-1,2);
-        vo_max_old = obj.UserData{3}(ii-1,1);
-    else
-        io_max_old = 0;
-        vo_max_old = 0;
-    end
-    % io_max = io_max_old + 0.1;
-    % vo_max = vo_max_old + 0.3;
-    io_max = io_max_old; %io * 1.1;
-    vo_max = vo_max_old; %vo * 1.1;
-    if io > io_pv
-        io_max = io_pv;
-    end
-    if vo > vo_pv
-        vo_max = vo_pv;
-    end
+    G_est = io/vo;
+    vo_max = fzero(@(v)interp1(lut(:,1), lut(:,2), v, "linear", "extrap") - G_est*v, 6);
+    io_max = interp1(lut(:,1), lut(:,2), vo, "linear", "extrap");
     if io_max < 0
         io_max = 0;
     end
@@ -131,8 +112,9 @@ function supply_run(obj, event, inst, lut)
     end
     writeline(inst, "I1 " + num2str(io_max));
     writeline(inst, "V1 " + num2str(vo_max));
+    ii = obj.UserData{1};
     obj.UserData{2}(ii,:) = [vo, io];
-    obj.UserData{3}(ii,:) = [vo_pv, io_pv];
+    obj.UserData{3}(ii,:) = [vo_max, io_max];
     obj.UserData{1} = ii + 1;
     fprintf("\b\b\b\b%4d", ii)
 end
@@ -153,19 +135,20 @@ end
 function load_run(obj, event, inst)
     res = writeread(inst, "RESISTANCE?");
     res = get_number(res);
-    writeline(inst, "RESISTANCE " + num2str(res/1.03));
-    % il_str = writeread(inst, "MEASURE:CURRENT:ACDC?");
-    % vl_str = writeread(inst, "MEASURE:VOLTAGE:ACDC?");
-    % il = get_number(il_str);
-    % vl = get_number(vl_str);
-    % ii = obj.UserData{1};
-    % obj.UserData{2}(ii,:) = [vl, il];
-    % obj.UserData{1} = ii + 1;
+    writeline(inst, "RESISTANCE " + num2str(res/1.02));
+    il_str = writeread(inst, "MEASURE:ARRAY:CURRENT?");
+    vl_str = writeread(inst, "MEASURE:ARRAY:VOLTAGE?");
+    il = get_number(il_str);
+    vl = get_number(vl_str);
+    ii = obj.UserData{1};
+    obj.UserData{2}(ii,:) = [vl, il];
+    obj.UserData{1} = ii + 1;
 end
 function load_start(obj, event, inst, resistance)
     writeline(inst, "MODE RESISTANCE");
     writeline(inst, "RESISTANCE " + num2str(resistance));
     writeline(inst, "INPUT ON");
+    writeline(inst, "SENSE:SWEEP:POINTS 1");
 end
 
 function load_stop(obj, event, inst)
