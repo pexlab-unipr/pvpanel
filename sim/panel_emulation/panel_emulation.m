@@ -9,12 +9,12 @@ close all
 %% PARAMETERS
 SUPPLY_NAME = "ASRL3::INSTR";
 LOAD_NAME = "USB0::0x2A8D::0x3802::MY61002160::0::INSTR";
-SUPPLY_PERIOD = 0.1;
-LOAD_PERIOD = 2;
-TIME_TOTAL = 60;
+SUPPLY_PERIOD = 0.025;
+LOAD_PERIOD = 0.2;
+TIME_TOTAL = 20;
 SUPPLY_IDX = 1;
 LOAD_IDX = 2;
-LOAD_RESISTANCE = 100;
+LOAD_RESISTANCE = 60;
 
 %% Connect to instrumentation
 
@@ -49,7 +49,7 @@ is = f(vs);
 pv_lut = [vs(:), is(:)];
 N_supply = round(TIME_TOTAL/SUPPLY_PERIOD);
 N_load = round(TIME_TOTAL/LOAD_PERIOD);
-supply_out = zeros(N_supply, 2);
+init0 = zeros(N_supply, 2);
 
 %% Main test loop
 tim_supply = timer(...
@@ -60,7 +60,7 @@ tim_supply = timer(...
     'Period', SUPPLY_PERIOD, ...
     'ExecutionMode', 'fixedRate', ...
     'TasksToExecute', N_supply, ...
-    'UserData', {1, supply_out});
+    'UserData', {1, init0, init0});
 tim_load = timer(...
     'TimerFcn', {@load_run, inst{LOAD_IDX}}, ...
     'StartFcn', {@load_start, inst{LOAD_IDX}, LOAD_RESISTANCE}, ...
@@ -68,7 +68,8 @@ tim_load = timer(...
     'ErrorFcn', @error_handler, ...
     'Period', LOAD_PERIOD, ...
     'ExecutionMode', 'fixedRate', ...
-    'TasksToExecute', N_load);
+    'TasksToExecute', N_load, ...
+    'UserData', {1, zeros(N_load, 2);});
 tim_supply.start()
 tim_load.start()
 wait(tim_supply)
@@ -78,49 +79,88 @@ figure
 hold on
 plot(pv_lut(:,1), pv_lut(:,2))
 plot(tim_supply.UserData{2}(:,1), tim_supply.UserData{2}(:,2))
-plot(pv_lut(:,1), pv_lut(:,1)/LOAD_RESISTANCE)
+% plot(pv_lut(:,1), pv_lut(:,1)/LOAD_RESISTANCE)
+% plot(tim_supply.UserData{3}(:,1), tim_supply.UserData{3}(:,2))
+plot(tim_load.UserData{2}(:,1), tim_load.UserData{2}(:,2))
 xlabel('Voltage (V)')
 ylabel('Current (A)')
+box on
+grid on
+
+figure
+hold on
+plot(tim_supply.UserData{2}(:,1))
+plot(tim_supply.UserData{2}(:,2))
+plot(tim_supply.UserData{2}(:,1)./tim_supply.UserData{2}(:,2))
+plot(tim_supply.UserData{3}(:,1))
+plot(tim_supply.UserData{3}(:,2))
 box on
 grid on
 
 %% Functions
 function supply_run(obj, event, inst, lut)
     vo_str = writeread(inst, "V1O?");
-    vo = str2double(regexp(vo_str, "[-|+]?[0-9]*[.]?[0-9]*[e|E]?[-|+]?[0-9]*", 'match'));
+    vo = get_number(vo_str);
     io_str = writeread(inst, "I1O?");
-    io = str2double(regexp(io_str, "[-|+]?[0-9]*[.]?[0-9]*[e|E]?[-|+]?[0-9]*", 'match'));
-    io_set = interp1(lut(:,1), lut(:,2), vo, "linear", "extrap");
-    io_pv = io_set;
-    io_set = io_set; % - 0.1; % for convergence
-    if io_set < 0
-        io_set = 0;
-    end
-    cmd = "I1 " + num2str(io_set);
-    writeline(inst, cmd);
-    cmd = "V1 " + num2str(vo);
-    writeline(inst, cmd);
+    io = get_number(io_str);
+    io_pv = interp1(lut(:,1), lut(:,2), vo, "linear", "extrap");
+    vo_pv = interp1(lut(:,2), lut(:,1), io, "linear", "extrap");
     ii = obj.UserData{1};
+    if ii > 1
+        io_max_old = obj.UserData{3}(ii-1,2);
+        vo_max_old = obj.UserData{3}(ii-1,1);
+    else
+        io_max_old = 0;
+        vo_max_old = 0;
+    end
+    % io_max = io_max_old + 0.1;
+    % vo_max = vo_max_old + 0.3;
+    io_max = io_max_old; %io * 1.1;
+    vo_max = vo_max_old; %vo * 1.1;
+    if io > io_pv
+        io_max = io_pv;
+    end
+    if vo > vo_pv
+        vo_max = vo_pv;
+    end
+    if io_max < 0
+        io_max = 0;
+    end
+    if vo_max < 0
+        vo_max = 0;
+    end
+    writeline(inst, "I1 " + num2str(io_max));
+    writeline(inst, "V1 " + num2str(vo_max));
     obj.UserData{2}(ii,:) = [vo, io];
+    obj.UserData{3}(ii,:) = [vo_pv, io_pv];
     obj.UserData{1} = ii + 1;
-    % fprintf("%f   %f   %f   %f\n", vo, io, io_pv, io_set)
+    fprintf("\b\b\b\b%4d", ii)
 end
 
 function supply_start(obj, event, inst)
-    writeline(inst, "V1 7");
+    writeline(inst, "V1 0");
     writeline(inst, "I1 0");
     writeline(inst, "OP1 1");
+    fprintf("xxxx")
 end
 
 function supply_stop(obj, event, inst)
     writeline(inst, "OP1 0");
     inst.delete()
+    fprintf("\n")
 end
 
 function load_run(obj, event, inst)
     res = writeread(inst, "RESISTANCE?");
-    res = str2double(regexp(res, "[-|+]?[0-9]*[.]?[0-9]*[e|E]?[-|+]?[0-9]*", 'match'));
-    writeline(inst, "RESISTANCE " + num2str(res/1.05));
+    res = get_number(res);
+    writeline(inst, "RESISTANCE " + num2str(res/1.03));
+    % il_str = writeread(inst, "MEASURE:CURRENT:ACDC?");
+    % vl_str = writeread(inst, "MEASURE:VOLTAGE:ACDC?");
+    % il = get_number(il_str);
+    % vl = get_number(vl_str);
+    % ii = obj.UserData{1};
+    % obj.UserData{2}(ii,:) = [vl, il];
+    % obj.UserData{1} = ii + 1;
 end
 function load_start(obj, event, inst, resistance)
     writeline(inst, "MODE RESISTANCE");
@@ -139,6 +179,9 @@ function error_handler(obj, event)
     event.Data
 end
 
+function num = get_number(str)
+    num = str2double(regexp(str, "[-|+]?[0-9]*[.]?[0-9]*[e|E]?[-|+]?[0-9]*", 'match'));
+end
 
 
 
