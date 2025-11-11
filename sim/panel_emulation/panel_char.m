@@ -19,9 +19,9 @@ cmds = [
     "DISP:TEXT ""Ciao Alex!""";
     "DISP:TEXT:CLE";
     "FUNC RES, (@1)";
-    "RES 31, (@1)";
+    "RES 101, (@1)";
     "TRAN:MODE LIST, (@1)";
-    "LIST:RES " + sprintf("%d,", logspace(log10(20), log10(1000), 100)) + " (@1)";
+    "LIST:RES " + sprintf("%d,", logspace(log10(10), log10(1000), 100)) + " (@1)";
     "LIST:DWEL 0.5, (@1)";
     "LIST:COUNT 1, (@1)";
     "LIST:STEP AUTO, (@1)";
@@ -76,9 +76,13 @@ xlabel('Voltage (V)')
 ylabel('Current (A)')
 box on
 grid on
+print("current.png", '-dpng')
 %
 figure
 hold on
-plot(vs, vs.*is, '.')
+plot(vs, vs.*is, '.-')
+xlabel('Voltage (V)')
+ylabel('Power (W)')
 box on
 grid on
+print("power.png", '-dpng')
