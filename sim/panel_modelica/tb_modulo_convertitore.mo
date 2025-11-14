@@ -13,7 +13,7 @@ model tb_modulo_convertitore
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
   Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 24, values = [1000; fill(1000, 23, 1)]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
-  Pexlab.PVPanels.pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 24, n_paralleli = 1, n_celle_converter = 12, I_out_max_converter = 10) annotation(
+  Pexlab.PVPanels.pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 24, n_paralleli = 1, n_celle_converter = 12, I_out_max_converter = 6) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
 equation
   connect(voltageSensor.v, potenza.u2) annotation(

@@ -28,7 +28,7 @@ package PVPanels
     // Working values (to help dealing with saturations)
     Modelica.Units.SI.Resistance R_in  "input impedance";
     Real A     "converter gain";
-    Real s(start = 0.0)    "abstract variable for saturation";
+    Real s(start = -1.0)    "abstract variable for saturation";
     Boolean sat;
   equation
   // Output voltage as a function of input, multiplied by gain
@@ -227,7 +227,7 @@ for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il ter
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
 //importo il modello del convertitore, per ora non cambio il guadagno
-    convertitore conv_dc_dc[num_conv, n_paralleli](each I_out_max = I_out_max_converter, each fixed_gain = false, each R_in = 15);
+    convertitore conv_dc_dc[num_conv, n_paralleli](each I_out_max = I_out_max_converter, each fixed_gain = false, each input_impedance = 15);
     
     
   protected
@@ -266,7 +266,7 @@ for ii_conv in 1:num_conv loop
       connect(conv_dc_dc[1, ramo].p2, p);
 // Connect n terminal of last converter to block n pin
       connect(conv_dc_dc[num_conv, ramo].n2, n);
-// Connect n terminal of last cell to block n pin (for biasing the cell string)
+// Connect only n terminal of last cell to block n pin (for biasing the cell string)
       connect(pv_celle[n_serie, ramo].n, n);
     end for;
   annotation(
