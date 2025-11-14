@@ -219,7 +219,7 @@ for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il ter
     parameter Integer n_celle_converter = 5     "numero di celle sotto convertitore";
     parameter Integer temp_test         = 25    "temperatura operativa della singola cella";
     parameter Integer irr_test          = 1000  "irraggiamento incidente sul modulo";
-    parameter Real I_in_max_converter "maximum converter input current";
+    parameter Real I_out_max_converter "maximum converter output current";
     // Matrix of PV cells, arranged as in the module (series -> rows, parallels -> columns)
     pvcell_singola_cella pv_celle[n_serie, n_paralleli] (each Temperatura = temp_test) "creo array e assegno temperatura a ciascuno";
   //importo la matrice per l'illuminazione delle singole celle
@@ -227,7 +227,7 @@ for ramo in 1:n_paralleli loop //collego l'anodo del diodo di stringa con il ter
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
 //importo il modello del convertitore, per ora non cambio il guadagno
-    convertitore conv_dc_dc[num_conv, n_paralleli](each I_in_max = I_in_max_converter);
+    convertitore conv_dc_dc[num_conv, n_paralleli](each I_out_max = I_out_max_converter, each fixed_gain = false, each R_in = 15);
     
     
   protected
@@ -254,18 +254,18 @@ for ramo in 1:n_paralleli loop
       // Connect converters in series
 for ii_conv in 1:num_conv loop
 // Connect converter input p terminal to cells
-        connect(pv_celle[1 + (ii_conv - 1)*n_celle_converter, ramo].p, conv_dc_dc[ii_conv, ramo].p_celle);
+        connect(pv_celle[1 + (ii_conv - 1)*n_celle_converter, ramo].p, conv_dc_dc[ii_conv, ramo].p1);
 // Connect converter input n terminal to cells
-        connect(pv_celle[n_celle_converter + (ii_conv - 1)*n_celle_converter, ramo].n, conv_dc_dc[ii_conv, ramo].n_celle);
+        connect(pv_celle[n_celle_converter + (ii_conv - 1)*n_celle_converter, ramo].n, conv_dc_dc[ii_conv, ramo].n1);
 // Connect converter outputs in series
         if ii_conv < num_conv then
-          connect(conv_dc_dc[ii_conv, ramo].n_stringa, conv_dc_dc[ii_conv + 1, ramo].p_stringa);
+          connect(conv_dc_dc[ii_conv, ramo].n2, conv_dc_dc[ii_conv + 1, ramo].p2);
         end if;
       end for;
 // Connect p terminal of first converter to block p pin
-      connect(conv_dc_dc[1, ramo].p_stringa, p);
+      connect(conv_dc_dc[1, ramo].p2, p);
 // Connect n terminal of last converter to block n pin
-      connect(conv_dc_dc[num_conv, ramo].n_stringa, n);
+      connect(conv_dc_dc[num_conv, ramo].n2, n);
 // Connect n terminal of last cell to block n pin (for biasing the cell string)
       connect(pv_celle[n_serie, ramo].n, n);
     end for;
