@@ -2,3 +2,6 @@
 sim/slprj/
 *.slxc
 sim/Pexlab/package.order
+*.log
+*.raw
+*.net
