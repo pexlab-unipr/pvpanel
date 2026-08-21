@@ -16,7 +16,7 @@ LINE Normal 96 60 76 60
 RECTANGLE Normal 112 80 16 -16
 CIRCLE Normal 26 2 22 -2
 CIRCLE Normal 106 2 102 -2
-TEXT 55 32 Left 2 R
+TEXT 64 32 Center 2 RV
 WINDOW 0 64 112 Bottom 2
 SYMATTR Description Ideal DC/DC converter, resistance-defined
 PIN 0 64 NONE 8

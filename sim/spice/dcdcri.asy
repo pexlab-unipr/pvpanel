@@ -1,0 +1,33 @@
+Version 4
+SymbolType BLOCK
+LINE Normal 16 0 0 0
+LINE Normal 16 64 0 64
+LINE Normal 128 0 112 0
+LINE Normal 128 64 112 64
+LINE Normal 112 -16 16 80
+LINE Normal 36 4 32 4
+LINE Normal 44 4 40 4
+LINE Normal 52 4 48 4
+LINE Normal 52 0 32 0
+LINE Normal 80 64 76 64
+LINE Normal 88 64 84 64
+LINE Normal 96 64 92 64
+LINE Normal 96 60 76 60
+RECTANGLE Normal 112 80 16 -16
+CIRCLE Normal 26 2 22 -2
+CIRCLE Normal 106 2 102 -2
+TEXT 64 32 Center 2 RI
+WINDOW 0 64 112 Bottom 2
+SYMATTR Description Ideal DC/DC converter, resistance-defined
+PIN 0 64 NONE 8
+PINATTR PinName in
+PINATTR SpiceOrder 1
+PIN 0 0 NONE 8
+PINATTR PinName ip
+PINATTR SpiceOrder 2
+PIN 128 64 NONE 8
+PINATTR PinName on
+PINATTR SpiceOrder 3
+PIN 128 0 NONE 8
+PINATTR PinName op
+PINATTR SpiceOrder 4
