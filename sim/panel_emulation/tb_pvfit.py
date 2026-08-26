@@ -16,8 +16,9 @@ class Pvmodel:
         self.Impp = 0
         self.Pmpp = self.Vmpp * self.Impp
         self.Idark = 0
-        self.Irr_norm = 1000 # [W/m^2]
         self.FF = 0
+        self.Irr_norm = 1000 # [W/m^2]
+        self.T_norm = 25 # [°C]
     def name(self):
         return self.name
     def __str__(self):
@@ -28,33 +29,54 @@ class Pvmodel:
         )
     def mpp(self):
         return self.Vmpp, self.Impp, self.Pmpp # dummy values
-    def current(self, vp, irr=None):
-        if not irr:
+    def current(self, vp, irr=None, Tp=None):
+        if irr is None:
             irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        # TODO: manage temperature in code, not only in interface
         return self.Isc * irr/self.Irr_norm * np.ones_like(vp) # dummy values
-    def power(self, vp, irr=None):
-        return vp * self.current(vp, irr)
-    def plot(self, block=True, Npts=100, irr=None):
+    def power(self, vp, irr=None, Tp=None):
+        return vp * self.current(vp, irr, Tp)
+    def plot(self, block=True, Npts=100, irr=None, Tp=None):
         vp = np.linspace(0, self.Voc, Npts)
         plt.figure()
-        for irri in irr:
-            ip = self.current(vp, irri)
+        if irr is None:
+            irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        conditions = np.hstack((irr.reshape((-1, 1)), Tp.reshape((-1, 1))))
+        for condition in conditions:
+            (irri, Tpi) = condition
+            ip = self.current(vp, irri, Tpi)
             plt.plot(vp, ip, 'b-')
-            plt.plot(self.Vmpp, self.Impp, 'r*', label="MPP")
+        plt.plot(vp, self.current(vp), 'g--', label="normal")
+        plt.plot(self.Vmpp, self.Impp, 'r*', label="MPP")
         plt.xlabel("Output voltage (V)")
         plt.ylabel("Output current (A)")
+        plt.xlim(0, self.Voc)
+        plt.ylim(0, self.Isc*1.1)
         plt.box(True)
         plt.grid(True)
         plt.show(block=block)
-    def plot_power(self, block=True, Npts=100, irr=None):
+    def plot_power(self, block=True, Npts=100, irr=None, Tp=None):
         vp = np.linspace(0, self.Voc, Npts)
         plt.figure()
-        for irri in irr:
-            ip = self.current(vp, irri)
+        if irr is None:
+            irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        conditions = np.hstack((irr.reshape((-1, 1)), Tp.reshape((-1, 1))))
+        for condition in conditions:
+            (irri, Tpi) = condition
+            ip = self.current(vp, irri, Tpi)
             plt.plot(vp, vp * ip, 'b-')
-            plt.plot(self.Vmpp, self.Pmpp, 'r*', label="MPP")
+        plt.plot(vp, vp * self.current(vp), 'g--', label="normal")
+        plt.plot(self.Vmpp, self.Pmpp, 'r*', label="MPP")
         plt.xlabel("Output voltage (V)")
         plt.ylabel("Output power (W)")
+        plt.xlim(0, self.Voc)
+        plt.ylim(0, self.Pmpp*1.1)
         plt.box(True)
         plt.grid(True)
         plt.show(block=block)
@@ -70,20 +92,26 @@ class Pvmodel_rational(Pvmodel):
         super().__init__(name)
         self.Voc = Voc
         self.Isc = Isc
-        self.Ia = Ia # specific parameter of the liner fraction model
+        self.Ia = Ia # specific parameter of the linear fraction model
         self.Re = Voc/Isc # derived parameter
-        self.Vmpp = self.Re * self.Ia * (1 - np.sqrt(1 - self.Voc/self.Re/self.Ia))
+        self.Vmpp = self.Re * self.Ia * (1 - np.sqrt(1 - self.Voc/self.Re/self.Ia)) # analytical expression
         self.Impp = self.current(self.Vmpp)
-        self.Pmpp = self.Vmpp * self.Impp
+        self.Pmpp = self.power(self.Vmpp)
         self.FF = self.Pmpp/(self.Voc * self.Isc)
-    def current(self, vp, irr=None):
-        if not irr:
+    def current(self, vp, irr=None, Tp=None):
+        if irr is None:
             irr = self.Irr_norm
-        ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) * irr/self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        # TODO: manage temperature
+        # ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) * irr/self.Irr_norm # Voc does not change with irradiance
+        ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) - self.Isc*(self.Irr_norm - irr)/self.Irr_norm # Voc changes but unvalidated
         return ip
     pass
 
 pv = Pvmodel_rational("dummy", 14, 8, 8.4)
 print(pv)
-pv.plot(False, irr=np.array([300, 600, 1000]))
-pv.plot_power(True, irr=np.array([300]))
+pv.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+# pv.plot(False)
+pv.plot_power(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+# pv.plot_power(True)
