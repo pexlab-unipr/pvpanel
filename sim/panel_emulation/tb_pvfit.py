@@ -1,11 +1,12 @@
 # /// script
 # requires-python = ">=3.14"
-# dependencies = ["numpy", "scipy", "matplotlib"]
+# dependencies = ["numpy", "scipy", "matplotlib", "pandas"]
 # ///
 
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as spo
+import pandas as pd
 
 class Pvmodel:
     def __init__(self, name):
@@ -45,7 +46,7 @@ class Pvmodel:
             irr = self.Irr_norm
         if Tp is None:
             Tp = self.T_norm
-        conditions = np.hstack((irr.reshape((-1, 1)), Tp.reshape((-1, 1))))
+        conditions = np.hstack((np.reshape(irr, (-1, 1)), np.reshape(Tp, (-1, 1))))
         for condition in conditions:
             (irri, Tpi) = condition
             ip = self.current(vp, irri, Tpi)
@@ -66,7 +67,7 @@ class Pvmodel:
             irr = self.Irr_norm
         if Tp is None:
             Tp = self.T_norm
-        conditions = np.hstack((irr.reshape((-1, 1)), Tp.reshape((-1, 1))))
+        conditions = np.hstack((np.reshape(irr, (-1, 1)), np.reshape(Tp, (-1, 1))))
         for condition in conditions:
             (irri, Tpi) = condition
             ip = self.current(vp, irri, Tpi)
@@ -82,7 +83,24 @@ class Pvmodel:
         plt.show(block=block)
     
 class Pvmodel_table(Pvmodel):
-    pass
+    def __init__(self, name, filename):
+        super().__init__(name)
+        data = pd.read_csv(filename, sep=',', header=0, usecols=["V", "I"])
+        self.vp = data.V.to_numpy()
+        self.ip = data.I.to_numpy()
+        self.Isc = self.ip.max()
+        self.Voc = self.vp.max()
+        pp = self.vp * self.ip
+        self.Pmpp = pp.max()
+        ii_mpp = pp.argmax()
+        self.Vmpp = self.vp[ii_mpp]
+        self.Impp = self.ip[ii_mpp]
+    def current(self, vp, irr=None, Tp=None):
+        if irr is None:
+            irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        return np.interp(vp, self.vp, self.ip)
 
 class Pvmodel_electric(Pvmodel):
     pass
@@ -109,9 +127,14 @@ class Pvmodel_rational(Pvmodel):
         return ip
     pass
 
-pv = Pvmodel_rational("dummy", 14, 8, 8.4)
-print(pv)
-pv.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
-# pv.plot(False)
-pv.plot_power(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
-# pv.plot_power(True)
+pva = Pvmodel_rational("dummy analytical", 14, 8, 8.1)
+print(pva)
+pva.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+pva.plot_power(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+# pva.plot(False)
+# pva.plot_power(True)
+
+pvt = Pvmodel_table("openei table", "10333_34_5_01152020.csv")
+print(pvt)
+pvt.plot(False)
+pvt.plot_power(True)
