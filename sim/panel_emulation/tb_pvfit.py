@@ -29,7 +29,7 @@ class Pvmodel:
             f"    Vmpp = {self.Vmpp:5.2f} V    Impp = {self.Impp:5.2f} A    Pmpp = {self.Pmpp:5.2f} W"
         )
     def mpp(self):
-        return self.Vmpp, self.Impp, self.Pmpp # dummy values
+        return self.Vmpp, self.Impp, self.Pmpp, self.FF
     def current(self, vp, irr=None, Tp=None):
         if irr is None:
             irr = self.Irr_norm
@@ -95,12 +95,14 @@ class Pvmodel_table(Pvmodel):
         ii_mpp = pp.argmax()
         self.Vmpp = self.vp[ii_mpp]
         self.Impp = self.ip[ii_mpp]
+        self.FF = self.Pmpp/(self.Voc * self.Isc)
     def current(self, vp, irr=None, Tp=None):
         if irr is None:
             irr = self.Irr_norm
         if Tp is None:
             Tp = self.T_norm
-        return np.interp(vp, self.vp, self.ip)
+        ip = np.interp(vp, self.vp, self.ip) - self.Isc*(1 - irr/self.Irr_norm)
+        return ip
 
 class Pvmodel_electric(Pvmodel):
     pass
@@ -116,6 +118,19 @@ class Pvmodel_rational(Pvmodel):
         self.Impp = self.current(self.Vmpp)
         self.Pmpp = self.power(self.Vmpp)
         self.FF = self.Pmpp/(self.Voc * self.Isc)
+    @classmethod
+    def from_data(cls, name, filename): # "overloaded constructor" the (strange) Python way!
+        data = pd.read_csv(filename, sep=',', header=0, usecols=["V", "I"])
+        vp = data.V.to_numpy()
+        ip = data.I.to_numpy()
+        Isc = ip.max()
+        Voc = vp.max()
+        # LSQ fit on all the characteristic gives bad results
+        f = lambda x, p: Pvmodel_rational("asd", Voc, Isc, p).current(x)
+        # TODO Trying fitting on fill factor
+        # f = lambda x, p: Pvmodel_rational("asd", Voc, Isc, p).current(x)
+        Ia = spo.curve_fit(f, vp, ip, p0=None, bounds=(Isc, np.inf))[0][0]
+        return cls(name, Voc, Isc, Ia)
     def current(self, vp, irr=None, Tp=None):
         if irr is None:
             irr = self.Irr_norm
@@ -123,18 +138,32 @@ class Pvmodel_rational(Pvmodel):
             Tp = self.T_norm
         # TODO: manage temperature
         # ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) * irr/self.Irr_norm # Voc does not change with irradiance
-        ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) - self.Isc*(self.Irr_norm - irr)/self.Irr_norm # Voc changes but unvalidated
+        ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) - self.Isc*(1 - irr/self.Irr_norm) # Voc changes but unvalidated
         return ip
     pass
 
 pva = Pvmodel_rational("dummy analytical", 14, 8, 8.1)
 print(pva)
 pva.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
-pva.plot_power(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+pva.plot_power(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
 # pva.plot(False)
-# pva.plot_power(True)
+# pva.plot_power(False)
 
 pvt = Pvmodel_table("openei table", "10333_34_5_01152020.csv")
 print(pvt)
 pvt.plot(False)
-pvt.plot_power(True)
+pvt.plot_power(False)
+pvt.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+pvt.plot_power(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+
+Ias = np.linspace(8.01, 9, 100)
+FFs = np.array([Pvmodel_rational("asd", 14, 8, Ia).mpp()[3] for Ia in Ias])
+plt.figure()
+plt.plot(Ias, FFs)
+plt.show(block=False)
+
+pvf = Pvmodel_rational.from_data("openei fitted", "10333_34_5_01152020.csv")
+print(pvf)
+pvf.plot(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+
+print("Ciao!")
