@@ -81,7 +81,7 @@ class Pvmodel:
         plt.box(True)
         plt.grid(True)
         plt.show(block=block)
-    
+
 class Pvmodel_table(Pvmodel):
     def __init__(self, name, filename):
         super().__init__(name)
@@ -105,7 +105,37 @@ class Pvmodel_table(Pvmodel):
         return ip
 
 class Pvmodel_electric(Pvmodel):
-    pass
+    def __init__(self, name, Voc, Isc, Idark, eta, Rs, Rp):
+        super().__init__(name)
+        self.Voc = Voc
+        self.Isc = Isc
+        self.Idark = Idark
+        self.eta = eta
+        self.Rs = Rs
+        self.Rp = Rp
+        self.Vt = 26e-3 # TODO: insert temperature dependence
+        # Euristic: compute number of equivalent junctions in series, 
+        # dividing by open circuit voltage of a diode giving the desired Isc
+        self.N = np.round(self.Voc/(self.eta*self.Vt*np.log(self.Isc/self.Idark)))
+        self.Irr_norm = 1000 # [W/m^2]
+        self.T_norm = 25 # [°C]
+    def current(self, vp, irr=None, Tp=None):
+        if irr is None:
+            irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        ip = np.empty_like(vp)
+        ii = 0
+        for vpi in vp:
+            vpi = vpi/self.N
+            f = lambda x: \
+                self.Isc * irr/self.Irr_norm - \
+                self.Idark * (np.exp((vpi + self.Rs * x)/self.eta/self.Vt) - 1) - \
+                (vpi + self.Rs * x)/self.Rp - \
+                x
+            ip[ii] = spo.root_scalar(f, x0=self.Isc/2).root
+            ii += 1
+        return ip
 
 class Pvmodel_rational(Pvmodel):
     def __init__(self, name, Voc, Isc, Ia):
@@ -128,7 +158,6 @@ class Pvmodel_rational(Pvmodel):
         # LSQ fit on all the characteristic gives bad results
         f = lambda x, p: Pvmodel_rational("asd", Voc, Isc, p).current(x)
         # TODO Trying fitting on fill factor
-        # f = lambda x, p: Pvmodel_rational("asd", Voc, Isc, p).current(x)
         Ia = spo.curve_fit(f, vp, ip, p0=None, bounds=(Isc, np.inf))[0][0]
         return cls(name, Voc, Isc, Ia)
     def current(self, vp, irr=None, Tp=None):
@@ -140,7 +169,27 @@ class Pvmodel_rational(Pvmodel):
         # ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) * irr/self.Irr_norm # Voc does not change with irradiance
         ip = self.Ia * (vp - self.Voc)/(vp - self.Re*self.Ia) - self.Isc*(1 - irr/self.Irr_norm) # Voc changes but unvalidated
         return ip
-    pass
+
+class Pvmodel_pwl(Pvmodel):
+    def __init__(self, name, Voc, Isc, Rs, Rp):
+        super().__init__(name)
+        self.Voc = Voc
+        self.Isc = Isc
+        self.Rs = Rs
+        self.Rp = Rp
+        self.Irr_norm = 1000 # [W/m^2]
+        self.T_norm = 25 # [°C]
+    def current(self, vp, irr=None, Tp=None):
+        if irr is None:
+            irr = self.Irr_norm
+        if Tp is None:
+            Tp = self.T_norm
+        ip_doff = self.Isc * irr/self.Irr_norm - 1/self.Rp * vp
+        ip_don = (self.Voc - vp)/self.Rs
+        ip = np.minimum(ip_doff, ip_don)
+        return ip
+
+# ==== Test bench ====
 
 pva = Pvmodel_rational("dummy analytical", 14, 8, 8.1)
 print(pva)
@@ -164,6 +213,15 @@ plt.show(block=False)
 
 pvf = Pvmodel_rational.from_data("openei fitted", "10333_34_5_01152020.csv")
 print(pvf)
-pvf.plot(True, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+pvf.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+
+pve = Pvmodel_electric("elec", 14, 8, 1e-9, 1.4, 0.1, 1)
+print(pve)
+pve.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
+
+pvp = Pvmodel_pwl("pwl", 14, 8, 0.1, 30)
+print(pvp)
+pvp.plot(False, irr=np.array([300, 600, 900]), Tp=np.array([40, 40, 40]))
 
 print("Ciao!")
+plt.close('all')
