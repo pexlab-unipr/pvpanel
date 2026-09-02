@@ -41,8 +41,8 @@ PvModelType = Enum('PvModelType', [
 class PvModel:
     def __init__(self, \
                  voc, isc, \
-                 vmpp=None, impp=None, pmpp=None, ff=None, \
-                 ctc=0.05, vtc=-0.25, ptc=-0.35, \
+                 vmpp=None, impp=None, pmpp=None, ff=0.75, \
+                 itc=0.05, vtc=-0.25, ptc=-0.35, \
                  condition=STC, name=None, model=None):
         self.voc = voc
         self.isc = isc
@@ -50,31 +50,39 @@ class PvModel:
         self.impp = impp
         self.pmpp = pmpp
         self.ff = ff
-        self.ctc = ctc # [%/°C] short-circuit current temperature coefficient
+        self.itc = itc # [%/°C] short-circuit current temperature coefficient
         self.vtc = vtc # [%/°C] open-circuit voltage temperature coefficient
         self.ptc = ptc # [%/°C] maximum power temperature coefficient
         self.condition = condition # condition at which data is represented, defaults to STC
         self.name = name
         self.model = model
-        self.mpp_check()
-    def mpp_check(self):
-        # Assume similarity in ratio of MPP to characteristic boundaries
-        # TODO: check if similarity hypothesis hold
+        self.parameter_check()
+    def parameter_check(self):
+        # Determine secondary temperature coefficients
+        self.ftc = self.ptc - self.vtc - self.itc # fill factor temperature coefficient
+        # TODO: complete computation of TCs of MPP quantities
+        # ftc = (vhtc + ihtc - vtc - itc)
+        self.vhtc = 0 # MPP voltage temperature coefficient
+        self.ihtc = 0 # MPP current temperature coefficient
+        # Full similarity in the ratio between MPP coordinates (vmpp, impp) and characteristic
+        # boundaries (voc, isc) does not hold exactly, it seems that:
+        # vmpp/voc = 0.80, impp/isc = 0.90
         if (self.vmpp is not None) and (self.impp is not None): # MPP completely specified, overrides everything
             self.pmpp = self.vmpp * self.impp
             self.ff = self.pmpp/(self.voc * self.isc)
         elif self.pmpp is not None: # maximum power specified, overrides fill factor
             self.ff = self.pmpp/(self.voc * self.isc)
-            a = np.sqrt(self.ff)
+            a = np.sqrt(self.ff) # TODO: fix according to what stated above
             self.vmpp = a * self.voc
             self.impp = a * self.isc
         elif self.ff is not None: # only fill factor given
             self.pmpp = self.ff * self.voc * self.isc
-            a = np.sqrt(self.ff)
+            a = np.sqrt(self.ff) # TODO: fix according to what stated above
             self.vmpp = a * self.voc
             self.impp = a * self.isc
         else:
             raise ValueError("Either maximum power or fill factor must be specified.")
+        
     def __str__(self):
         return (
             f"PV \"{self.name}\":\n"
@@ -88,7 +96,9 @@ class PvModel:
             case PvModelType.ELECTRIC:
                 ip = isc * np.ones_like(vp)
             case PvModelType.LINEAR_RATIONAL:
-                ip = isc * np.ones_like(vp)
+                ff = pmpp/(voc*isc)
+                Ia = isc*ff/(2*np.sqrt(ff) - 1)
+                ip = Ia * (vp - voc)/(vp - voc/isc*Ia)
             case PvModelType.EXPONENTIAL:
                 ip = isc * np.ones_like(vp)
             case PvModelType.PIECEWISE_LINEAR:
@@ -99,12 +109,12 @@ class PvModel:
         return ip
     def current(self, vp, condition=STC, model=None):
         # Scale short-circuit current in irradiance and temperature
-        isc = self.isc * (condition.irradiance/self.condition.irradiance) * (1 + self.ctc/100 * (condition.panel_temp - self.condition.panel_temp))
+        isc = self.isc * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
         # Scale open-circuit voltage in temperature only
         voc = self.voc * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
         # TODO: check how Vmpp and Impp scale with temperature
         # For now, assuming they scale as Voc and Isc, respectively
-        impp = self.impp * (condition.irradiance/self.condition.irradiance) * (1 + self.ctc/100 * (condition.panel_temp - self.condition.panel_temp))
+        impp = self.impp * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
         vmpp = self.vmpp * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
         # Scale power in case it is needed by the interpolation model
         pmpp = self.pmpp * (1 + self.ptc/100 * (condition.panel_temp - self.condition.panel_temp))
@@ -124,20 +134,30 @@ class PvModel:
              block=True, Npts=100):
         vp = np.linspace(0, self.voc, Npts)
         model = self.model if model is None else model
-        x = np.ones_like(vp) if plot_current else vp
-        plt.figure()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.set_xlabel('Panel voltage (V)')
         for condition in conditions:
             ip = self.current(vp, condition, model)
-            plt.plot(vp, x * ip, 'b-')
-        plt.plot(vp, x * self.current(vp, condition=STC, model=model), 'g--', label="STC")
-        plt.plot(vp, x * self.current(vp, condition=NOCT, model=model), 'm--', label="NOCT")
-        plt.plot(self.vmpp, self.impp, 'r*', label="MPP")
-        plt.xlabel("Output voltage (V)")
-        plt.ylabel("Output current (A)") # plt.ylabel("Output power (W)")
-        plt.xlim(0, self.voc)
-        plt.ylim(0, self.isc * 1.1) # plt.ylim(0, self.Pmpp * 1.1)
-        plt.box(True)
-        plt.grid(True)
+            if plot_current:
+                ax1.plot(vp, ip, 'b-')
+            if plot_power:
+                ax2.plot(vp, vp * ip, 'b--')
+        if plot_current:
+            ax1.plot(vp, self.current(vp, condition=STC, model=model), 'g-', label="STC")
+            ax1.plot(vp, self.current(vp, condition=NOCT, model=model), 'm-', label="NOCT")
+            ax1.plot(self.vmpp, self.impp, 'r*', label="MPP")
+            ax1.set_ylabel('Panel current (A)')
+            ax1.set_ylim([0, self.isc*1.1])
+            # ax1.tick_params(axis='y', labelcolor=color)
+        if plot_power:
+            ax2.plot(vp, vp * self.current(vp, condition=STC, model=model), 'g--', label="STC")
+            ax2.plot(vp, vp * self.current(vp, condition=NOCT, model=model), 'm--', label="NOCT")
+            ax2.plot(self.vmpp, self.pmpp, 'r.', label="MPP")
+            ax2.set_ylabel('Panel power (W)')
+            ax2.set_ylim([0, self.pmpp*1.1])
+            # ax2.tick_params(axis='y', labelcolor=color)
+        ax1.set_xlim([0, self.voc])
         plt.show(block=block)
 
 """ class Pvmodel_table(Pvmodel):
@@ -259,7 +279,8 @@ print(pv2)
 print(pv3)
 print(pv4)
 print(pv5)
-pv1.plot(model=PvModelType.PIECEWISE_LINEAR)
+pv1.plot(plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
+pv1.plot(plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
 
 print("Ciao!")
 plt.close('all')
