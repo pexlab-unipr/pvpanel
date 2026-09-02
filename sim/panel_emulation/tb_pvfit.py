@@ -108,16 +108,7 @@ class PvModel:
                 raise ValueError("Unknown or unspecified PV model type.")
         return ip
     def current(self, vp, condition=STC, model=None):
-        # Scale short-circuit current in irradiance and temperature
-        isc = self.isc * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
-        # Scale open-circuit voltage in temperature only
-        voc = self.voc * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
-        # TODO: check how Vmpp and Impp scale with temperature
-        # For now, assuming they scale as Voc and Isc, respectively
-        impp = self.impp * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
-        vmpp = self.vmpp * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
-        # Scale power in case it is needed by the interpolation model
-        pmpp = self.pmpp * (1 + self.ptc/100 * (condition.panel_temp - self.condition.panel_temp))
+        pmpp, vmpp, impp, ff, voc, isc = self.mpp(condition)
         # Compute current according to model
         model = self.model if model is None else model
         # TODO: check how to pass data at the specific current model
@@ -126,8 +117,20 @@ class PvModel:
     def power(self, vp, condition=STC, model=None):
         return vp * self.current(vp, condition, model)
     def mpp(self, condition=STC):
-        # TODO: recompute values according to condition and model
-        return self.vmpp, self.impp, self.pmpp, self.FF
+        # Scale short-circuit current in irradiance and temperature
+        isc = self.isc * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
+        # Scale open-circuit voltage in temperature only
+        voc = self.voc * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
+        # TODO: check how Vmpp and Impp scale with temperature and irradiance
+        # For now, assuming they scale as Voc and Isc, respectively
+        impp = self.impp * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
+        vmpp = self.vmpp * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
+        # Scale maximum power (temperature and irradiance)
+        pmpp = self.pmpp * (1 + self.ptc/100 * (condition.panel_temp - self.condition.panel_temp))
+        ff = pmpp/(voc * isc)
+        # Check if Pmpp computed with temperature and irradiance is consistent with Vmpp*Impp
+        assert np.abs(pmpp/(vmpp*impp) - 1) < 0.02, "Inconsistent max power in non-standard conditions."
+        return pmpp, vmpp, impp, ff, voc, isc
     def plot(self, \
              conditions=[STC], model=None, \
              plot_current=True, plot_power=False, plot_mpp=True, \
@@ -149,15 +152,15 @@ class PvModel:
             ax1.plot(self.vmpp, self.impp, 'r*', label="MPP")
             ax1.set_ylabel('Panel current (A)')
             ax1.set_ylim([0, self.isc*1.1])
-            # ax1.tick_params(axis='y', labelcolor=color)
         if plot_power:
             ax2.plot(vp, vp * self.current(vp, condition=STC, model=model), 'g--', label="STC")
             ax2.plot(vp, vp * self.current(vp, condition=NOCT, model=model), 'm--', label="NOCT")
             ax2.plot(self.vmpp, self.pmpp, 'r.', label="MPP")
             ax2.set_ylabel('Panel power (W)')
             ax2.set_ylim([0, self.pmpp*1.1])
-            # ax2.tick_params(axis='y', labelcolor=color)
         ax1.set_xlim([0, self.voc])
+        ax1.box(True)
+        ax1.grid(True)
         plt.show(block=block)
 
 """ class Pvmodel_table(Pvmodel):
