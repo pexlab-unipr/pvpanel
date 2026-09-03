@@ -43,7 +43,8 @@ class PvModel:
                  voc, isc, \
                  vmpp=None, impp=None, pmpp=None, ff=0.75, \
                  itc=0.05, vtc=-0.25, ptc=-0.35, \
-                 condition=STC, name=None, model=None):
+                 igc=0.1, vgc=0.01, pgc=0.1, \
+                 condition=STC, model=None, name=None):
         self.voc = voc
         self.isc = isc
         self.vmpp = vmpp
@@ -53,17 +54,25 @@ class PvModel:
         self.itc = itc # [%/°C] short-circuit current temperature coefficient
         self.vtc = vtc # [%/°C] open-circuit voltage temperature coefficient
         self.ptc = ptc # [%/°C] maximum power temperature coefficient
+        self.igc = igc # [%/(W/m^2)] short-circuit current irradiance coefficient
+        self.vgc = vgc # [%/(W/m^2)] open-circuit voltage irradiance coefficient
+        self.pgc = pgc # [%/(W/m^2)] maximum power irradiance coefficient
         self.condition = condition # condition at which data is represented, defaults to STC
-        self.name = name
         self.model = model
+        self.name = name
         self.parameter_check()
     def parameter_check(self):
-        # Determine secondary temperature coefficients
+        # Determine secondary coefficients (temperature and irradiance)
         self.ftc = self.ptc - self.vtc - self.itc # fill factor temperature coefficient
-        # TODO: complete computation of TCs of MPP quantities
-        # ftc = (vhtc + ihtc - vtc - itc)
+        self.fgc = self.pgc - self.vgc - self.igc # fill factor irradiance coefficient
+        # TODO: complete computation of coefficients of MPP quantities
+        # For now, assuming vmpp coefficients are null
+        # ptc = vhtc + ihtc
+        # pgc = vhgc + ihgc
         self.vhtc = 0 # MPP voltage temperature coefficient
-        self.ihtc = 0 # MPP current temperature coefficient
+        self.ihtc = self.ptc - self.vhtc # MPP current temperature coefficient
+        self.vhgc = 0 # MPP voltage irradiance coefficient
+        self.ihgc = self.pgc - self.vhgc # MPP current irradiance coefficient
         # Full similarity in the ratio between MPP coordinates (vmpp, impp) and characteristic
         # boundaries (voc, isc) does not hold exactly, it seems that:
         # vmpp/voc = 0.80, impp/isc = 0.90
@@ -117,17 +126,19 @@ class PvModel:
     def power(self, vp, condition=STC, model=None):
         return vp * self.current(vp, condition, model)
     def mpp(self, condition=STC):
-        # Scale short-circuit current in irradiance and temperature
-        isc = self.isc * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
-        # Scale open-circuit voltage in temperature only
-        voc = self.voc * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
+        # Compute differences in conditions
+        Delta_T = condition.panel_temp - self.condition.panel_temp
+        Delta_G = condition.irradiance - self.condition.irradiance
+        # Scale quantities in irradiance and temperature
+        isc = self.isc * (1 + self.itc/100 * Delta_T + self.igc/100 * Delta_G)
+        voc = self.voc * (1 + self.vtc/100 * Delta_T + self.vgc/100 * Delta_G)
         # TODO: check how Vmpp and Impp scale with temperature and irradiance
         # For now, assuming they scale as Voc and Isc, respectively
-        impp = self.impp * (condition.irradiance/self.condition.irradiance) * (1 + self.itc/100 * (condition.panel_temp - self.condition.panel_temp))
-        vmpp = self.vmpp * (1 + self.vtc/100 * (condition.panel_temp - self.condition.panel_temp))
+        impp = self.impp * (1 + self.ihtc/100 * Delta_T + self.ihgc/100 * Delta_G)
+        vmpp = self.vmpp * (1 + self.vhtc/100 * Delta_T + self.vhgc/100 * Delta_G)
         # Scale maximum power (temperature and irradiance)
-        pmpp = self.pmpp * (1 + self.ptc/100 * (condition.panel_temp - self.condition.panel_temp))
-        ff = pmpp/(voc * isc)
+        pmpp = self.pmpp * (1 + self.ptc/100 * Delta_T + self.pgc/100 * Delta_G)
+        ff = self.ff * (1 + self.ftc/100 * Delta_T + self.fgc/100 * Delta_G)
         # Check if Pmpp computed with temperature and irradiance is consistent with Vmpp*Impp
         assert np.abs(pmpp/(vmpp*impp) - 1) < 0.02, "Inconsistent max power in non-standard conditions."
         return pmpp, vmpp, impp, ff, voc, isc
@@ -159,7 +170,6 @@ class PvModel:
             ax2.set_ylabel('Panel power (W)')
             ax2.set_ylim([0, self.pmpp*1.1])
         ax1.set_xlim([0, self.voc])
-        ax1.box(True)
         ax1.grid(True)
         plt.show(block=block)
 
