@@ -64,6 +64,12 @@ class PvModel:
     def parameter_check(self):
         # Determine secondary coefficients (temperature and irradiance)
         self.ftc = self.ptc - self.vtc - self.itc # fill factor temperature coefficient
+        # Assuming a purely linear relationship between isc-irradiance and pmpp-irradiance,
+        # they should both have a coefficient of +0.1 %/(W/m^2). This, in turn, implies that:
+        #     fgc = -vgc
+        # Since, for sure, vgc is positive, this leads to a negative fgc. This, unfortunately,
+        # is the opposite of what is normally seen in reality. Hence, in order to have
+        # positive fgc, it must hold that pgc > igc + vgc
         self.fgc = self.pgc - self.vgc - self.igc # fill factor irradiance coefficient
         # TODO: complete computation of coefficients of MPP quantities
         # For now, assuming vmpp coefficients are null
@@ -122,6 +128,7 @@ class PvModel:
         model = self.model if model is None else model
         # TODO: check how to pass data at the specific current model
         ip = self.current_model(vp, voc, isc, vmpp, impp, pmpp, model)
+        ip[vp > voc] = np.nan
         return ip
     def power(self, vp, condition=STC, model=None):
         return vp * self.current(vp, condition, model)
@@ -292,8 +299,15 @@ print(pv2)
 print(pv3)
 print(pv4)
 print(pv5)
-pv1.plot(plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
-pv1.plot(plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
+conditions = [
+    PvCondition(irradiance=1000, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
+    PvCondition(irradiance= 800, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
+    PvCondition(irradiance= 600, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
+    PvCondition(irradiance= 400, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
+    PvCondition(irradiance= 200, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0)
+]
+pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
+pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
 
 print("Ciao!")
 plt.close('all')
