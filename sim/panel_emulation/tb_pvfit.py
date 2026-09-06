@@ -115,7 +115,17 @@ class PvModel:
                 Ia = isc*ff/(2*np.sqrt(ff) - 1)
                 ip = Ia * (vp - voc)/(vp - voc/isc*Ia)
             case PvModelType.EXPONENTIAL:
-                ip = isc * np.ones_like(vp)
+                mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
+                mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
+                fun = lambda x: [
+                    np.log(1 + mdl(0, x) - isc),
+                    np.log(1 + mdl(voc, x)),
+                    np.log(1 + mdlp(vmpp, x) + impp/vmpp)
+                ]
+                x0 = [isc, -isc/1e6, voc/10]
+                x = spo.root(fun, x0, method='hybr').x
+                print(x)
+                ip = mdl(vp, x)
             case PvModelType.PIECEWISE_LINEAR:
                 # ip = np.interp(vp, [0, vmpp, voc], [isc, impp, 0]) # does not extrapolate!!
                 ip = spi.make_interp_spline([0, vmpp, voc], [isc, impp, 0], k=1)(vp)
@@ -308,6 +318,7 @@ conditions = [
 ]
 pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
 pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
+pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.EXPONENTIAL)
 
 print("Ciao!")
 plt.close('all')
