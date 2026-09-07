@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.14"
-# dependencies = ["numpy", "scipy", "matplotlib", "pandas"]
+# dependencies = ["numpy", "scipy", "matplotlib", "pandas", "fplot"]
 # ///
 
 from enum import Enum
@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import scipy.optimize as spo
 import scipy.interpolate as spi
 import pandas as pd
+import fplot
 
 # Support functions
 def extend(value, x, default=0):
@@ -117,15 +118,23 @@ class PvModel:
             case PvModelType.EXPONENTIAL:
                 mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
                 mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
-                fun = lambda x: [
-                    np.log(1 + mdl(0, x) - isc),
-                    np.log(1 + mdl(voc, x)),
-                    np.log(1 + mdlp(vmpp, x) + impp/vmpp)
-                ]
-                x0 = [isc, -isc/1e6, voc/10]
-                x = spo.root(fun, x0, method='hybr').x
-                print(x)
-                ip = mdl(vp, x)
+                fun = lambda y: \
+                    y + np.log(y) - np.log(impp/isc) - np.log(np.expm1(voc/vmpp * y))
+                fun2 = lambda y: \
+                    np.log(np.expm1(y)) - np.log(1 - impp/isc) - np.log(np.expm1(voc/vmpp * y))
+                yab = (1, 100)
+                # fplot.plot((fun, fun2), yab[0], yab[1])
+                y = spo.root_scalar(fun2, bracket=yab, method='brentq').root
+                print(y)
+                print(fun2(y))
+                Vc = vmpp/y
+                Ib = -isc/np.expm1(voc/Vc)
+                Ia = isc - Ib
+                print(mdl(0, (Ia, Ib, Vc)) - isc)
+                print(mdl(voc, (Ia, Ib, Vc)))
+                print(mdlp(vmpp, (Ia, Ib, Vc)) + impp/vmpp)
+                print("--------")
+                ip = mdl(vp, (Ia, Ib, Vc))
             case PvModelType.PIECEWISE_LINEAR:
                 # ip = np.interp(vp, [0, vmpp, voc], [isc, impp, 0]) # does not extrapolate!!
                 ip = spi.make_interp_spline([0, vmpp, voc], [isc, impp, 0], k=1)(vp)
