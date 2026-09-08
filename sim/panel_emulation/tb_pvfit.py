@@ -119,15 +119,18 @@ class PvModel:
                     p[0] + p[1]*x + p[2]/(x + p[3])
                 mdlp = lambda x, p: \
                     p[1] - p[2]/(x + p[3])**2
-                fun = lambda y: [
-                    mdl(0, y) - isc,
-                    mdl(voc, y),
-                    mdl(vmpp, y) - impp,
-                    mdlp(vmpp, y) + impp/vmpp
-                ]
-                y0 = [isc, -0.1, 1, -1.05*voc]
-                sol = spo.root(fun, y0)
-                y = sol.x
+                def fun(d, voc, isc, vmpp, impp):
+                    x = np.array([0, vmpp, voc]).reshape(-1, 1)
+                    y = np.array([isc, impp, 0]).reshape(-1, 1)
+                    F = np.array(1/(x + d))
+                    A = np.hstack((np.ones_like(x), x, F))
+                    abc = np.linalg.solve(A, y)
+                    p = np.vstack((abc, np.array(d).reshape(-1, 1)))
+                    return mdlp(vmpp, p) + impp/vmpp
+                yab = [-1.5*voc, -0.5*voc]
+                fun2 = lambda x: fun(x, voc, isc, float(vmpp), float(impp))
+                sol = spo.root_scalar(fun2, bracket=yab, method='brentq')
+                y = sol.root
                 print(y)
                 print(sol.message)
                 print(fun(y))
