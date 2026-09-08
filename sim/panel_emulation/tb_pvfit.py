@@ -115,23 +115,24 @@ class PvModel:
                 # ff = pmpp/(voc*isc)
                 # Ia = isc*ff/(2*np.sqrt(ff) - 1)
                 # ip = Ia * (vp - voc)/(vp - voc/isc*Ia)
-                mdl = lambda x, a, b, c, d: \
-                    a + b*x + c/(x + d)
-                mdlp = lambda x, a, b, c, d: \
-                    b - c/(x + d)**2
+                mdl = lambda x, p: \
+                    p[0] + p[1]*x + p[2]/(x + p[3])
+                mdlp = lambda x, p: \
+                    p[1] - p[2]/(x + p[3])**2
                 fun = lambda y: [
-                    mdl(0, y[0], y[1],y[2], y[3]) - isc,
-                    mdl(voc, y[0], y[1],y[2], y[3]),
-                    mdl(vmpp, y[0], y[1],y[2], y[3]) - impp,
-                    mdlp(vmpp, y[0], y[1],y[2], y[3]) + impp/vmpp
+                    mdl(0, y) - isc,
+                    mdl(voc, y),
+                    mdl(vmpp, y) - impp,
+                    mdlp(vmpp, y) + impp/vmpp
                 ]
                 y0 = [isc, -0.1, 1, -1.05*voc]
                 sol = spo.root(fun, y0)
                 y = sol.x
                 print(y)
                 print(sol.message)
-                a, b, c, d = y
-                ip = mdl(vp, a, b, c, d)
+                print(fun(y))
+                print("--------")
+                ip = mdl(vp, y)
             case PvModelType.EXPONENTIAL:
                 mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
                 mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
