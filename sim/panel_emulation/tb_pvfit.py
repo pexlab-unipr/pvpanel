@@ -120,22 +120,23 @@ class PvModel:
                 mdlp = lambda x, p: \
                     p[1] - p[2]/(x + p[3])**2
                 def fun(d, voc, isc, vmpp, impp):
-                    x = np.array([0, vmpp, voc]).reshape(-1, 1)
-                    y = np.array([isc, impp, 0]).reshape(-1, 1)
-                    F = np.array(1/(x + d))
-                    A = np.hstack((np.ones_like(x), x, F))
-                    abc = np.linalg.solve(A, y)
-                    p = np.vstack((abc, np.array(d).reshape(-1, 1)))
-                    return mdlp(vmpp, p) + impp/vmpp
-                yab = [-1.5*voc, -0.5*voc]
-                fun2 = lambda x: fun(x, voc, isc, float(vmpp), float(impp))
+                    x = np.array([0, vmpp, voc])
+                    y = np.array([isc, impp, 0])
+                    F = 1/(x + d)
+                    A = np.hstack((np.ones((3, 1)), x.reshape(-1, 1), F.reshape(-1, 1)))
+                    abc = np.linalg.solve(A, y).ravel()
+                    p = np.concatenate((abc, [d]))
+                    return p
+                yab = [-1.5*voc, -1.001*voc]
+                fun2 = lambda x: mdlp(vmpp, fun(x, voc, isc, vmpp, impp)) + impp/vmpp
+                ds = np.linspace(yab[0], yab[1], 1001)
+                ys = np.array([fun2(d) for d in ds])
+                # plt.figure()
+                # plt.plot(ds, ys)
+                # plt.show()
                 sol = spo.root_scalar(fun2, bracket=yab, method='brentq')
                 y = sol.root
-                print(y)
-                print(sol.message)
-                print(fun(y))
-                print("--------")
-                ip = mdl(vp, y)
+                ip = mdl(vp, fun(y, voc, isc, vmpp, impp))
             case PvModelType.EXPONENTIAL:
                 mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
                 mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
