@@ -134,8 +134,8 @@ class PvModel:
                 y = sol.root
                 ip = mdl(vp, fun(y, voc, isc, vmpp, impp))
             case PvModelType.EXPONENTIAL:
-                mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
-                mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
+                mdl = lambda x, p: p[0] + p[1]*x + p[2]*np.exp(p[3]*x)
+                mdlp = lambda x, p: p[1] + p[2]*p[3]*np.exp(p[3]*x)
                 def fun(d, voc, isc, vmpp, impp):
                     x = np.array([0, vmpp, voc])
                     y = np.array([isc, impp, 0])
@@ -144,7 +144,7 @@ class PvModel:
                     abc = np.linalg.solve(A, y).ravel()
                     p = np.concatenate((abc, [d]))
                     return p
-                yab = [1, 100]
+                yab = [0.01, 10]
                 fun2 = lambda x: mdlp(vmpp, fun(x, voc, isc, vmpp, impp)) + impp/vmpp
                 sol = spo.root_scalar(fun2, bracket=yab, method='brentq')
                 y = sol.root
@@ -185,7 +185,7 @@ class PvModel:
     def plot(self, \
              conditions=[STC], model=None, \
              plot_current=True, plot_power=False, plot_mpp=True, \
-             block=True, Npts=100):
+             block=True, Npts=1000):
         vp = np.linspace(0, self.voc, Npts)
         model = self.model if model is None else model
         fig, ax1 = plt.subplots()
@@ -339,9 +339,9 @@ conditions = [
     PvCondition(irradiance= 400, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
     PvCondition(irradiance= 200, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0)
 ]
-pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
-pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
-pv1.plot(conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.EXPONENTIAL)
+pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
+pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
+pv1.plot(block=True, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.EXPONENTIAL)
 
 print("Ciao!")
 plt.close('all')
