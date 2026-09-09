@@ -127,36 +127,28 @@ class PvModel:
                     abc = np.linalg.solve(A, y).ravel()
                     p = np.concatenate((abc, [d]))
                     return p
+                # Asymptote must be greater than voc but negative
                 yab = [-1.5*voc, -1.001*voc]
                 fun2 = lambda x: mdlp(vmpp, fun(x, voc, isc, vmpp, impp)) + impp/vmpp
-                ds = np.linspace(yab[0], yab[1], 1001)
-                ys = np.array([fun2(d) for d in ds])
-                # plt.figure()
-                # plt.plot(ds, ys)
-                # plt.show()
                 sol = spo.root_scalar(fun2, bracket=yab, method='brentq')
                 y = sol.root
                 ip = mdl(vp, fun(y, voc, isc, vmpp, impp))
             case PvModelType.EXPONENTIAL:
                 mdl = lambda vx, p: p[0] + p[1] * np.exp(vx/p[2])
                 mdlp = lambda vx, p: p[1]/p[2] * np.exp(vx/p[2])
-                fun = lambda y: \
-                    y + np.log(y) - np.log(impp/isc) - np.log(np.expm1(voc/vmpp * y))
-                fun2 = lambda y: \
-                    np.log(np.expm1(y)) - np.log(1 - impp/isc) - np.log(np.expm1(voc/vmpp * y))
-                yab = (1, 100)
-                # fplot.plot((fun, fun2), yab[0], yab[1])
-                y = spo.root_scalar(fun2, bracket=yab, method='brentq').root
-                print(y)
-                print(fun2(y))
-                Vc = vmpp/y
-                Ib = -isc/np.expm1(voc/Vc)
-                Ia = isc - Ib
-                print(mdl(0, (Ia, Ib, Vc)) - isc)
-                print(mdl(voc, (Ia, Ib, Vc)))
-                print(mdlp(vmpp, (Ia, Ib, Vc)) + impp/vmpp)
-                print("--------")
-                ip = mdl(vp, (Ia, Ib, Vc))
+                def fun(d, voc, isc, vmpp, impp):
+                    x = np.array([0, vmpp, voc])
+                    y = np.array([isc, impp, 0])
+                    F = np.exp(d*x)
+                    A = np.hstack((np.ones((3, 1)), x.reshape(-1, 1), F.reshape(-1, 1)))
+                    abc = np.linalg.solve(A, y).ravel()
+                    p = np.concatenate((abc, [d]))
+                    return p
+                yab = [1, 100]
+                fun2 = lambda x: mdlp(vmpp, fun(x, voc, isc, vmpp, impp)) + impp/vmpp
+                sol = spo.root_scalar(fun2, bracket=yab, method='brentq')
+                y = sol.root
+                ip = mdl(vp, fun(y, voc, isc, vmpp, impp))
             case PvModelType.PIECEWISE_LINEAR:
                 # ip = np.interp(vp, [0, vmpp, voc], [isc, impp, 0]) # does not extrapolate!!
                 ip = spi.make_interp_spline([0, vmpp, voc], [isc, impp, 0], k=1)(vp)
