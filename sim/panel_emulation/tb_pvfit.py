@@ -20,14 +20,14 @@ def extend(value, x, default=0):
 
 # PV condition class
 class PvCondition:
-    def __init__(self, irradiance, panel_temp, ambient_temp, air_mass, wind_speed):
+    def __init__(self, irradiance=1000, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0):
         self.irradiance = irradiance     # [W/m^2] panel irradiance
         self.panel_temp = panel_temp     # [°C] panel temperature
         self.ambient_temp = ambient_temp # [°C] ambient temperature
         self.air_mass = air_mass         # [1] air mass
         self.wind_speed = wind_speed     # [m/s] wind speed
 
-STC = PvCondition(irradiance=1000, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0)
+STC = PvCondition() # It's the default!
 NOCT = PvCondition(irradiance=800, panel_temp=45, ambient_temp=20, air_mass=1.5, wind_speed=1)
 
 # Enumeration for PV model
@@ -161,7 +161,7 @@ class PvModel:
         model = self.model if model is None else model
         # TODO: check how to pass data at the specific current model
         ip = self.current_model(vp, voc, isc, vmpp, impp, pmpp, model)
-        ip[vp > voc] = np.nan
+        # ip[vp > voc] = np.nan
         return ip
     def power(self, vp, condition=STC, model=None):
         return vp * self.current(vp, condition, model)
@@ -212,6 +212,35 @@ class PvModel:
         ax1.set_xlim([0, self.voc])
         ax1.grid(True)
         plt.show(block=block)
+
+def series(pvs, conditions, npts=1001):
+    Np = len(pvs)
+    Nc = len(conditions)
+    assert Nc == Np, "Need for as many conditions as panels (or cells) specified."
+    # Determine maximum voltage by summing open-circuit voltages
+    vmax = sum([pv.voc for pv in pvs])
+    vpv = np.linspace(0, vmax, npts)
+    vi = np.empty((Np, npts))
+    ii = np.empty_like(vi)
+    for jj in range(npts):
+        def sys(vx):
+            eqn = np.concatenate(
+                (
+                    np.array([np.sum(vx) - vpv[jj]]), 
+                    np.array([pvs[kk].current(vx[kk], condition=conditions[kk]) \
+                        - pvs[kk + 1].current(vx[kk + 1], condition=conditions[kk + 1]) for kk in range(Np - 1)])
+                )
+            )
+            return eqn
+        res = spo.root(sys, vpv[jj]/Np * np.ones(Np), method='lm')
+        vi[:,jj] = res.x
+        # print(res.message)
+    for jj in range(Np):
+        ii[jj,:] = pvs[jj].current(vi[jj,:], condition=conditions[jj])
+    vi = np.transpose(vi)
+    ii = np.transpose(ii)
+    ipv = ii[:,0]
+    return vpv, ipv, vi, ii
 
 """ class Pvmodel_table(Pvmodel):
     def __init__(self, name, filename):
@@ -322,7 +351,7 @@ class Pvmodel_pwl(Pvmodel):
 
 # ==== Test bench ====
 
-pv1 = PvModel(48, 12, ff=0.75)
+pv1 = PvModel(48, 12, ff=0.75, model=PvModelType.EXPONENTIAL)
 pv2 = PvModel(48, 12, ff=0.75, name="prova")
 pv3 = PvModel(48, 12, pmpp=400)
 pv4 = PvModel(48, 12, pmpp=400, ff=0.8)
@@ -333,15 +362,26 @@ print(pv3)
 print(pv4)
 print(pv5)
 conditions = [
-    PvCondition(irradiance=1000, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
-    PvCondition(irradiance= 800, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
-    PvCondition(irradiance= 600, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
-    PvCondition(irradiance= 400, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0),
-    PvCondition(irradiance= 200, panel_temp=25, ambient_temp=25, air_mass=1.5, wind_speed=0)
+    PvCondition(irradiance=1000),
+    PvCondition(irradiance= 800),
+    PvCondition(irradiance= 600),
+    PvCondition(irradiance= 400),
+    PvCondition(irradiance= 200)
 ]
-pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
-pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
-pv1.plot(block=True, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.EXPONENTIAL)
+# pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.PIECEWISE_LINEAR)
+# pv1.plot(block=False, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.LINEAR_RATIONAL)
+# pv1.plot(block=True, conditions=conditions, plot_current=True, plot_power=True, model=PvModelType.EXPONENTIAL)
+
+vpv, ipv, vi, ii = series([pv1, pv1, pv1, pv1], [
+    PvCondition(irradiance=1000), 
+    PvCondition(irradiance= 800),
+    PvCondition(irradiance= 500),
+    PvCondition(irradiance= 200)], npts=1001)
+plt.figure()
+for jj in range(4):
+    plt.plot(vi[:,jj], vi[:,jj]*ii[:,jj])
+plt.plot(vpv, vpv*ipv)
+plt.show(block=True)
 
 print("Ciao!")
 plt.close('all')
