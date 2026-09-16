@@ -18,7 +18,7 @@ package Converters
     Real A "converter gain";
     Real s(start = -1.0) "abstract variable for saturation";
     Boolean sat "internal flag indicating saturation";
-  equation
+    equation
     // Output voltage as a function of input, multiplied by gain
     v2 = A*v1;
     // Input power computation
