@@ -1,5 +1,5 @@
 model tb_convertitore
-  Pexlab.PVPanels.convertitore convertitore1(efficiency = 0.95, fixed_gain = false, I_out_max = 3, input_impedance = 3)  annotation(
+  Pexlab.Converters.IdealDCDC convertitore1(efficiency = 0.95, fixed_gain = false, I_out_max = 3, input_impedance = 3)  annotation(
     Placement(transformation(origin = {0, 10}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Electrical.Analog.Basic.Ground ground annotation(
     Placement(transformation(origin = {-80, -70}, extent = {{-10, -10}, {10, 10}})));
@@ -17,7 +17,7 @@ model tb_convertitore
     Placement(transformation(origin = {-10, -30}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Blocks.Sources.Ramp ramp1(duration = 0.5, height = -19, offset = 0, startTime = 0.5) annotation(
     Placement(transformation(origin = {-50, -80}, extent = {{-10, -10}, {10, 10}})));
-equation
+  equation
   connect(ground.p, constantVoltage.n) annotation(
     Line(points = {{-80, -60}, {-80, 0}}, color = {0, 0, 255}));
   connect(capacitor.n, ground.p) annotation(

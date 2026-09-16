@@ -15,7 +15,7 @@ model tb_modulo_convertitore
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
   Pexlab.PVPanels.pvcell_modulo_convertitore pvcell_modulo_convertitore1(n_serie = 24, n_paralleli = 1, n_celle_converter = 12, I_out_max_converter = 6) annotation(
     Placement(transformation(origin = {-50, 10}, extent = {{-10, -10}, {10, 10}})));
-equation
+  equation
   connect(voltageSensor.v, potenza.u2) annotation(
     Line(points = {{44, 10}, {46, 10}, {46, 34}, {58, 34}}, color = {0, 0, 127}));
   connect(currentSensor.i, potenza.u1) annotation(

@@ -17,7 +17,7 @@ model tb_cella
     Placement(transformation(origin = {-90, 30}, extent = {{-10, -10}, {10, 10}})));
   Modelica.Blocks.Sources.Constant irr(k = 1000)  annotation(
     Placement(transformation(origin = {-90, -10}, extent = {{-10, -10}, {10, 10}})));
-equation
+  equation
   connect(voltageSensor.v, potenza.u2) annotation(
     Line(points = {{63, 10}, {65, 10}, {65, 34}, {77, 34}}, color = {0, 0, 127}));
   connect(currentSensor.i, potenza.u1) annotation(
@@ -40,7 +40,6 @@ equation
     Line(points = {{-78, 30}, {-62, 30}, {-62, 16}}, color = {0, 0, 127}));
   connect(irr.y, pvcell_singola_cella1.Irraggiamento) annotation(
     Line(points = {{-78, -10}, {-62, -10}, {-62, 4}}, color = {0, 0, 127}));
-
-annotation(
-    uses(Modelica(version = "4.0.0")));
+  annotation(
+      uses(Modelica(version = "4.0.0")));
 end tb_cella;

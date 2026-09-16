@@ -15,7 +15,7 @@ model tb_modulo
     Placement(transformation(origin = {50, -50}, extent = {{10, -10}, {-10, 10}})));
   Pexlab.PVPanels.matrix_output matrix_output1(n_cols = 1, n_rows = 2, values = [250; 1000]) annotation(
     Placement(transformation(origin = {-90, 10}, extent = {{-10, -10}, {10, 10}})));
-equation
+  equation
   connect(voltageSensor.v, potenza.u2) annotation(
     Line(points = {{44, 10}, {46, 10}, {46, 34}, {58, 34}}, color = {0, 0, 127}));
   connect(pvcell_modulo1.p, currentSensor.p) annotation(
