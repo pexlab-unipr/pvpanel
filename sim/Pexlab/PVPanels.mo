@@ -39,7 +39,7 @@ package PVPanels
         Placement(transformation(origin = {-250, 10}, extent = {{-10, -10}, {10, 10}})));
     Modelica.Blocks.Math.Product product12 annotation(
         Placement(transformation(origin = {-170, 30}, extent = {{-10, -10}, {10, 10}})));
-    equation
+  equation
     connect(diode.p, R_serie.p) annotation(
       Line(points = {{-52, 0}, {-52, 20}, {-6, 20}}, color = {0, 0, 255}));
     connect(product11.y, I_ph.i) annotation(
@@ -85,6 +85,16 @@ package PVPanels
         Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}})));
   end pvcell_singola_cella;
 
+  model PvcellExp
+    extends Modelica.Electrical.Analog.Interfaces.OnePort;
+    parameter Modelica.Units.SI.Current a(fixed=false);
+    parameter Modelica.Units.SI.Conductance b(fixed=false);
+    parameter Modelica.Units.SI.Current c(fixed=false);
+    parameter Real d(fixed=false);
+  equation
+    -i = a + b*v + c*exp(d*v);
+  end PvcellExp;
+
   model pvcell_modulo
     //importo pin + e - del modulo
     Modelica.Electrical.Analog.Interfaces.PositivePin p annotation(
@@ -106,13 +116,13 @@ package PVPanels
     Modelica.Blocks.Interfaces.RealVectorInput lights[n_serie, n_paralleli] annotation(
       Placement(transformation(origin = {-138, 0}, extent = {{-20, -20}, {20, 20}}), iconTransformation(origin = {-120, 0}, extent = {{-20, -20}, {20, 20}})));
 
-    protected
+  protected
     //calcolo il numero di diodi di bypass per ogni stringa
     parameter Integer num_bypass = div(n_serie, n_celle_bypass);
     //calcolo il numero totale di celle nel pannello
     parameter Integer n_tot_celle = n_serie * n_paralleli;
 
-    equation
+  equation
     //ciclo per fornire l'irraggiamento alle celle del modulo
     for i in 1:n_serie loop
       for j in 1:n_paralleli loop
@@ -167,13 +177,13 @@ package PVPanels
     //importo il modello del convertitore, per ora non cambio il guadagno
     Pexlab.Converters.IdealDCDC conv_dc_dc[num_conv, n_paralleli](each I_out_max = I_out_max_converter, each fixed_gain = false, each input_impedance = 15);
 
-    protected
+  protected
     //calcolo il numero di convertitori per ogni stringa
     parameter Integer num_conv = div(n_serie, n_celle_converter);
     //calcolo il numero totale di celle nel pannello
     parameter Integer n_tot_celle = n_serie * n_paralleli;
   
-    equation
+  equation
     //ciclo per fornire l'irraggiamento alle celle del modulo
     for i in 1:n_serie loop
       for j in 1:n_paralleli loop
